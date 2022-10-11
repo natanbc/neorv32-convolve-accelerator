@@ -9,8 +9,8 @@ entity cpu is
   generic (
     -- adapt these for your setup --
     CLOCK_FREQUENCY   : natural := 50000000;  -- clock frequency of clk_i in Hz
-    MEM_INT_IMEM_SIZE : natural := 16*1024;   -- size of processor-internal instruction memory in bytes
-    MEM_INT_DMEM_SIZE : natural := 8*1024     -- size of processor-internal data memory in bytes
+    MEM_INT_IMEM_SIZE : natural := 32*1024;   -- size of processor-internal instruction memory in bytes
+    MEM_INT_DMEM_SIZE : natural := 32*1024     -- size of processor-internal data memory in bytes
   );
   port (
     -- Global control --
@@ -35,23 +35,27 @@ begin
   neorv32_top_inst: neorv32_top
   generic map (
     -- General --
-    CLOCK_FREQUENCY              => CLOCK_FREQUENCY,   -- clock frequency of clk_i in Hz
-    INT_BOOTLOADER_EN            => true,              -- boot configuration: true = boot explicit bootloader; false = boot from int/ext (I)MEM
+    CLOCK_FREQUENCY              => CLOCK_FREQUENCY,
+    INT_BOOTLOADER_EN            => true,
     -- RISC-V CPU Extensions --
-    CPU_EXTENSION_RISCV_C        => true,              -- implement compressed extension?
-    CPU_EXTENSION_RISCV_M        => true,              -- implement mul/div extension?
-    CPU_EXTENSION_RISCV_Zicsr    => true,              -- implement CSR system?
-    CPU_EXTENSION_RISCV_Zicntr   => true,              -- implement base counters?
+    CPU_EXTENSION_RISCV_C        => true,
+    CPU_EXTENSION_RISCV_M        => true,
+    CPU_EXTENSION_RISCV_Zicsr    => true,
+    CPU_EXTENSION_RISCV_Zicntr   => true,
+	 
+	 FAST_MUL_EN                  => true,
+	 FAST_SHIFT_EN                => true,
     -- Internal Instruction memory --
-    MEM_INT_IMEM_EN              => true,              -- implement processor-internal instruction memory
-    MEM_INT_IMEM_SIZE            => MEM_INT_IMEM_SIZE, -- size of processor-internal instruction memory in bytes
+    MEM_INT_IMEM_EN              => true,
+    MEM_INT_IMEM_SIZE            => MEM_INT_IMEM_SIZE,
     -- Internal Data memory --
-    MEM_INT_DMEM_EN              => true,              -- implement processor-internal data memory
-    MEM_INT_DMEM_SIZE            => MEM_INT_DMEM_SIZE, -- size of processor-internal data memory in bytes
+    MEM_INT_DMEM_EN              => true,
+    MEM_INT_DMEM_SIZE            => MEM_INT_DMEM_SIZE,
     -- Processor peripherals --
-    IO_GPIO_EN                   => true,              -- implement general purpose input/output port unit (GPIO)?
-    IO_MTIME_EN                  => true,              -- implement machine system timer (MTIME)?
-    IO_UART0_EN                  => true               -- implement primary universal asynchronous receiver/transmitter (UART0)?
+	 IO_CFS_EN                    => true, -- convolution operation
+    IO_GPIO_EN                   => true,
+    IO_MTIME_EN                  => true,
+    IO_UART0_EN                  => true
   )
   port map (
     -- Global control --

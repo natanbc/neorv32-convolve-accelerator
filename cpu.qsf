@@ -59,12 +59,30 @@ set_global_assignment -name PARTITION_NETLIST_TYPE SOURCE -section_id Top
 set_global_assignment -name PARTITION_FITTER_PRESERVATION_LEVEL PLACEMENT_AND_ROUTING -section_id Top
 set_global_assignment -name PARTITION_COLOR 16764057 -section_id Top
 
+set_global_assignment -name POWER_PRESET_COOLING_SOLUTION "23 MM HEAT SINK WITH 200 LFPM AIRFLOW"
+set_global_assignment -name POWER_BOARD_THERMAL_MODEL "NONE (CONSERVATIVE)"
+
+set_location_assignment PIN_R24 -to rstn_i
+set_location_assignment PIN_Y2 -to clk_i
+set_location_assignment PIN_G19 -to gpio_o[7]
+set_location_assignment PIN_F19 -to gpio_o[6]
+set_location_assignment PIN_E19 -to gpio_o[5]
+set_location_assignment PIN_F21 -to gpio_o[4]
+set_location_assignment PIN_F18 -to gpio_o[3]
+set_location_assignment PIN_E18 -to gpio_o[2]
+set_location_assignment PIN_J19 -to gpio_o[1]
+set_location_assignment PIN_H19 -to gpio_o[0]
+set_location_assignment PIN_G12 -to uart0_rxd_i
+set_location_assignment PIN_G9 -to uart0_txd_o
+
+
+set_global_assignment -name VHDL_INPUT_VERSION VHDL_2008
+set_global_assignment -name VHDL_SHOW_LMF_MAPPING_MESSAGES OFF
 set_global_assignment -name VHDL_FILE neorv32/rtl/core/neorv32_application_image.vhd -library neorv32
 set_global_assignment -name VHDL_FILE neorv32/rtl/core/neorv32_boot_rom.vhd -library neorv32
 set_global_assignment -name VHDL_FILE neorv32/rtl/core/neorv32_bootloader_image.vhd -library neorv32
 set_global_assignment -name VHDL_FILE neorv32/rtl/core/neorv32_bus_keeper.vhd -library neorv32
 set_global_assignment -name VHDL_FILE neorv32/rtl/core/neorv32_busswitch.vhd -library neorv32
-set_global_assignment -name VHDL_FILE neorv32/rtl/core/neorv32_cfs.vhd -library neorv32
 set_global_assignment -name VHDL_FILE neorv32/rtl/core/neorv32_cpu.vhd -library neorv32
 set_global_assignment -name VHDL_FILE neorv32/rtl/core/neorv32_cpu_alu.vhd -library neorv32
 set_global_assignment -name VHDL_FILE neorv32/rtl/core/neorv32_cpu_bus.vhd -library neorv32
@@ -102,21 +120,9 @@ set_global_assignment -name VHDL_FILE neorv32/rtl/core/neorv32_xip.vhd -library 
 set_global_assignment -name VHDL_FILE neorv32/rtl/core/neorv32_xirq.vhd -library neorv32
 set_global_assignment -name VHDL_FILE neorv32/rtl/core/mem/neorv32_dmem.default.vhd -library neorv32
 set_global_assignment -name VHDL_FILE neorv32/rtl/core/mem/neorv32_imem.default.vhd -library neorv32
-set_global_assignment -name POWER_PRESET_COOLING_SOLUTION "23 MM HEAT SINK WITH 200 LFPM AIRFLOW"
-set_global_assignment -name POWER_BOARD_THERMAL_MODEL "NONE (CONSERVATIVE)"
 set_global_assignment -name VHDL_FILE cpu_top.vhd
+set_global_assignment -name VHDL_FILE neorv32_cfs.vhd -library neorv32
+set_global_assignment -name VHDL_FILE convolve.vhd
+set_global_assignment -name VHDL_FILE convolve_single_cycle.vhd
+set_global_assignment -name VHDL_FILE convolve_pipelined.vhd
 set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top
-
-set_location_assignment PIN_R24 -to rstn_i
-set_location_assignment PIN_Y2 -to clk_i
-set_location_assignment PIN_G19 -to gpio_o[7]
-set_location_assignment PIN_F19 -to gpio_o[6]
-set_location_assignment PIN_E19 -to gpio_o[5]
-set_location_assignment PIN_F21 -to gpio_o[4]
-set_location_assignment PIN_F18 -to gpio_o[3]
-set_location_assignment PIN_E18 -to gpio_o[2]
-set_location_assignment PIN_J19 -to gpio_o[1]
-set_location_assignment PIN_H19 -to gpio_o[0]
-set_location_assignment PIN_G12 -to uart0_rxd_i
-set_location_assignment PIN_G9 -to uart0_txd_o
-
