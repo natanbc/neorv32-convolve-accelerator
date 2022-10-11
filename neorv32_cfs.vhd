@@ -126,31 +126,31 @@ begin
           input_pixels(0) <= data_i(7 downto 0);
           input_pixels(1) <= data_i(15 downto 8);
           input_pixels(2) <= data_i(23 downto 16);
-          input_pixels(3) <= data_i(31 downto 24);
         end if;
         if (addr = cfs_reg1_addr_c) then
-          input_pixels(4) <= data_i(7 downto 0);
-          input_pixels(5) <= data_i(15 downto 8);
-          input_pixels(6) <= data_i(23 downto 16);
-          input_pixels(7) <= data_i(31 downto 24);
+          input_pixels(3) <= data_i(7 downto 0);
+          input_pixels(4) <= data_i(15 downto 8);
+          input_pixels(5) <= data_i(23 downto 16);
         end if;
         if (addr = cfs_reg2_addr_c) then
-          input_pixels(8) <= data_i(7 downto 0);
+          input_pixels(6) <= data_i(7 downto 0);
+          input_pixels(7) <= data_i(15 downto 8);
+          input_pixels(8) <= data_i(23 downto 16);
         end if;
         if (addr = cfs_reg3_addr_c) then
           input_matrix(0) <= data_i(7 downto 0);
           input_matrix(1) <= data_i(15 downto 8);
           input_matrix(2) <= data_i(23 downto 16);
-          input_matrix(3) <= data_i(31 downto 24);
         end if;
         if (addr = cfs_reg4_addr_c) then
-          input_matrix(4) <= data_i(7 downto 0);
-          input_matrix(5) <= data_i(15 downto 8);
-          input_matrix(6) <= data_i(23 downto 16);
-          input_matrix(7) <= data_i(31 downto 24);
+          input_matrix(3) <= data_i(7 downto 0);
+          input_matrix(4) <= data_i(15 downto 8);
+          input_matrix(5) <= data_i(23 downto 16);
         end if;
         if (addr = cfs_reg5_addr_c) then
-          input_matrix(8) <= data_i(7 downto 0);
+          input_matrix(6) <= data_i(7 downto 0);
+          input_matrix(7) <= data_i(15 downto 8);
+          input_matrix(8) <= data_i(23 downto 16);
         end if;
         if (addr = cfs_reg6_addr_c) then
           input_start <= '1';
