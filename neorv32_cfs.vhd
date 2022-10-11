@@ -64,11 +64,11 @@ architecture neorv32_cfs_rtl of neorv32_cfs is
     port (
       clk          : in std_ulogic;
       rst          : in std_ulogic;
-		input_start  : in std_ulogic;
+      input_start  : in std_ulogic;
       input_pixels : in pixel_regs_t;
       input_matrix : in matrix_regs_t;
       output_pixel : out std_ulogic_vector(31 downto 0);
-		output_done  : out std_ulogic
+      output_done  : out std_ulogic
     );
   end component convolve;
 begin
@@ -96,19 +96,19 @@ begin
   )
   port map(
     clk          => clk_i,
-	 rst          => rstn_i,
-	 input_start  => input_start,
-	 input_pixels => input_pixels,
-	 input_matrix => input_matrix,
-	 output_pixel => output_pixel,
-	 output_done  => output_done
+    rst          => rstn_i,
+    input_start  => input_start,
+    input_pixels => input_pixels,
+    input_matrix => input_matrix,
+    output_pixel => output_pixel,
+    output_done  => output_done
   );
 
 
   host_access: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-		input_pixels <= (others => (others => '0'));
+      input_pixels <= (others => (others => '0'));
       input_matrix <= (others => (others => '0'));
       --
       ack_o  <= '-'; -- no actual reset required
@@ -119,42 +119,42 @@ begin
       -- all read and write accesses (to any cfs_reg, even if there is no according physical register implemented) will succeed.
       ack_o <= rden or wren;
 
-		input_start <= '0';
+      input_start <= '0';
       -- write access --
       if (wren = '1') then
         if (addr = cfs_reg0_addr_c) then
-		    input_pixels(0) <= data_i(7 downto 0);
-			 input_pixels(1) <= data_i(15 downto 8);
-			 input_pixels(2) <= data_i(23 downto 16);
-			 input_pixels(3) <= data_i(31 downto 24);
+          input_pixels(0) <= data_i(7 downto 0);
+          input_pixels(1) <= data_i(15 downto 8);
+          input_pixels(2) <= data_i(23 downto 16);
+          input_pixels(3) <= data_i(31 downto 24);
         end if;
         if (addr = cfs_reg1_addr_c) then
-		  	 input_pixels(4) <= data_i(7 downto 0);
-			 input_pixels(5) <= data_i(15 downto 8);
-			 input_pixels(6) <= data_i(23 downto 16);
-			 input_pixels(7) <= data_i(31 downto 24);
+          input_pixels(4) <= data_i(7 downto 0);
+          input_pixels(5) <= data_i(15 downto 8);
+          input_pixels(6) <= data_i(23 downto 16);
+          input_pixels(7) <= data_i(31 downto 24);
         end if;
         if (addr = cfs_reg2_addr_c) then
-		  	 input_pixels(8) <= data_i(7 downto 0);
+          input_pixels(8) <= data_i(7 downto 0);
         end if;
         if (addr = cfs_reg3_addr_c) then
-		    input_matrix(0) <= data_i(7 downto 0);
-			 input_matrix(1) <= data_i(15 downto 8);
-			 input_matrix(2) <= data_i(23 downto 16);
-			 input_matrix(3) <= data_i(31 downto 24);
+          input_matrix(0) <= data_i(7 downto 0);
+          input_matrix(1) <= data_i(15 downto 8);
+          input_matrix(2) <= data_i(23 downto 16);
+          input_matrix(3) <= data_i(31 downto 24);
         end if;
         if (addr = cfs_reg4_addr_c) then
-		  	 input_matrix(4) <= data_i(7 downto 0);
-			 input_matrix(5) <= data_i(15 downto 8);
-			 input_matrix(6) <= data_i(23 downto 16);
-			 input_matrix(7) <= data_i(31 downto 24);
+          input_matrix(4) <= data_i(7 downto 0);
+          input_matrix(5) <= data_i(15 downto 8);
+          input_matrix(6) <= data_i(23 downto 16);
+          input_matrix(7) <= data_i(31 downto 24);
         end if;
         if (addr = cfs_reg5_addr_c) then
-		  	 input_matrix(8) <= data_i(7 downto 0);
+          input_matrix(8) <= data_i(7 downto 0);
         end if;
-		  if (addr = cfs_reg6_addr_c) then
-		    input_start <= '1';
-		  end if;
+        if (addr = cfs_reg6_addr_c) then
+          input_start <= '1';
+        end if;
       end if;
 
       -- read access --
@@ -162,7 +162,7 @@ begin
       if (rden = '1') then
         case addr is
           when cfs_reg0_addr_c => data_o <= output_pixel;
-			 when cfs_reg1_addr_c => data_o(0) <= output_done;
+          when cfs_reg1_addr_c => data_o(0) <= output_done;
           when others          => data_o <= (others => '0');
         end case;
       end if;

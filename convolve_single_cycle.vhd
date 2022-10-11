@@ -7,11 +7,11 @@ entity convolve_single_cycle is
   port (
     clk          : in std_ulogic;
     rst          : in std_ulogic;
-	 input_start  : in std_ulogic;
+    input_start  : in std_ulogic;
     input_pixels : in pixel_regs_t;
     input_matrix : in matrix_regs_t;
     output_pixel : out std_ulogic_vector(31 downto 0);
-	 output_done  : out std_ulogic
+    output_done  : out std_ulogic
   );
 end convolve_single_cycle;
 
@@ -23,8 +23,8 @@ begin
     variable stage2 : integer;
   begin
     if rising_edge(clk) then
-	   for i in 0 to 8 loop
-          stage1(i) := to_integer(unsigned(input_pixels(i))) * to_integer(signed(input_matrix(i)));
+      for i in 0 to 8 loop
+        stage1(i) := to_integer(unsigned(input_pixels(i))) * to_integer(signed(input_matrix(i)));
       end loop;
       stage2 := stage1(0) + stage1(1) + stage1(2) + stage1(3) + stage1(4) +
                 stage1(5) + stage1(6) + stage1(7) + stage1(8);

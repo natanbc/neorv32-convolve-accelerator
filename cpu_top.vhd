@@ -42,9 +42,9 @@ begin
     CPU_EXTENSION_RISCV_M        => true,
     CPU_EXTENSION_RISCV_Zicsr    => true,
     CPU_EXTENSION_RISCV_Zicntr   => true,
-	 
-	 FAST_MUL_EN                  => true,
-	 FAST_SHIFT_EN                => true,
+     
+    FAST_MUL_EN                  => true,
+    FAST_SHIFT_EN                => true,
     -- Internal Instruction memory --
     MEM_INT_IMEM_EN              => true,
     MEM_INT_IMEM_SIZE            => MEM_INT_IMEM_SIZE,
@@ -52,7 +52,7 @@ begin
     MEM_INT_DMEM_EN              => true,
     MEM_INT_DMEM_SIZE            => MEM_INT_DMEM_SIZE,
     -- Processor peripherals --
-	 IO_CFS_EN                    => true, -- convolution operation
+    IO_CFS_EN                    => true, -- convolution operation
     IO_GPIO_EN                   => true,
     IO_MTIME_EN                  => true,
     IO_UART0_EN                  => true
