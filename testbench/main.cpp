@@ -51,17 +51,22 @@ int main() {
 
     top.p_input__start.set(true);
     clock(top);
-
+    cycles--; //ignore the start cycle, since it's the write to the CFS register;
+              //other cycles are the real time until the value is available
     top.p_input__start.set(false);
-    clock(top);
 
-    for(int i = 0; i < 10; i++) {
+    for(int i = 0; i < 3; i++) {
+        clock(top);
         std::cout << "[cycle " << std::dec << i << "]: out = " << std::hex << top.p_output__pixel.get<uint32_t>() << std::endl;
         if(top.p_output__done.get<bool>()) {
             std::cout << "Done in " << cycles << " cycles" << std::endl;
             break;
         }
-        clock(top);
+    }
+
+    if(!top.p_output__done.get<bool>()) {
+        std::cout << "FAIL: did not finish in a reasonable amount of time" << std::endl;
+        return 1;
     }
 
     const auto out = top.p_output__pixel.get<uint32_t>();
@@ -69,7 +74,7 @@ int main() {
     std::cout << "Expected: " << std::hex << expected_out << std::endl;
 
     if(out != expected_out) {
-        std::cout << "FAIL" << std::endl;
+        std::cout << "FAIL: output did not match" << std::endl;
         return 1;
     }
 }
