@@ -38,6 +38,7 @@ begin
     CLOCK_FREQUENCY              => CLOCK_FREQUENCY,
     INT_BOOTLOADER_EN            => true,
     -- RISC-V CPU Extensions --
+    CPU_EXTENSION_RISCV_B        => true,
     CPU_EXTENSION_RISCV_C        => true,
     CPU_EXTENSION_RISCV_M        => true,
     CPU_EXTENSION_RISCV_Zicsr    => true,
