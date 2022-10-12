@@ -48,11 +48,27 @@ build/testbench_pipelined: build/pipelined/top.cpp testbench/main.cpp
 build/testbench_single_cycle: build/single_cycle/top.cpp testbench/main.cpp
 	$(CXX) $(CXXRTL_CXX_FLAGS) -I build/single_cycle -DTOP=p_convolve__single__cycle testbench/main.cpp -o $@
 
+build/testbench-ffi-pipelined.so: build/pipelined/top.cpp testbench/ffi.cpp
+	$(CXX) $(CXXRTL_CXX_FLAGS) -shared -fPIC -I build/pipelined -DTOP=p_convolve__pipelined testbench/ffi.cpp -o $@
+build/testbench-ffi-single_cycle.so: build/single_cycle/top.cpp testbench/ffi.cpp
+	$(CXX) $(CXXRTL_CXX_FLAGS) -shared -fPIC -I build/single_cycle -DTOP=p_convolve__single__cycle testbench/ffi.cpp -o $@
+
 testbench-pipelined: build/testbench_pipelined
 	build/testbench_pipelined
 testbench-single-cycle: build/testbench_single_cycle
 	build/testbench_single_cycle
 
-testbench: testbench-pipelined testbench-single-cycle
+build/reference.png: testbench/image.py testbench/input.png
+	mkdir -p $(@D)
+	python3 testbench/image.py reference
+build/cxxrtl-single_cycle.png: testbench/image.py testbench/input.png build/testbench-ffi-single_cycle.so
+	python3 testbench/image.py cxxrtl-single
+build/cxxrtl-pipelined.png: testbench/image.py testbench/input.png build/testbench-ffi-pipelined.so
+	python3 testbench/image.py cxxrtl-pipelined
 
-.PHONY: all clean testbench testbench-pipelined testbench-single-cycle
+testbench-image: build/reference.png build/cxxrtl-single_cycle.png build/cxxrtl-pipelined.png
+	python3 testbench/image.py check
+
+testbench: testbench-pipelined testbench-single-cycle testbench-image
+
+.PHONY: all clean testbench testbench-pipelined testbench-single-cycle testbench-image
