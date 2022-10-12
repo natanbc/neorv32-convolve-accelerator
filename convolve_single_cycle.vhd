@@ -26,8 +26,8 @@ begin
       for i in 0 to 8 loop
         stage1(i) := to_integer(unsigned(input_pixels(i))) * to_integer(signed(input_matrix(i)));
       end loop;
-      stage2 := stage1(0) + stage1(1) + stage1(2) + stage1(3) + stage1(4) +
-                stage1(5) + stage1(6) + stage1(7) + stage1(8);
+      stage2 := ((stage1(0) + stage1(1)) + (stage1(2) + stage1(3))) + stage1(4) +
+                ((stage1(5) + stage1(6)) + (stage1(7) + stage1(8)));
       output_pixel <= std_ulogic_vector(to_signed(stage2, 32));
       output_done <= '1';
     end if;

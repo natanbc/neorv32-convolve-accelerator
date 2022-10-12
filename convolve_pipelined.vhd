@@ -16,37 +16,49 @@ entity convolve_pipelined is
 end convolve_pipelined;
 
 architecture convolve_pipelined_rtl of convolve_pipelined is
+  constant final_step : integer := 3;
+
   type mult_acc_t is array (0 to 8) of integer;
   signal stage1 : mult_acc_t;
-  signal stage2 : integer;
+
+  -- ((0+1)+(2+3)) + ((5+6)+(7+8)), 4
+  type add1_acc_t is array (0 to 1) of integer;
+  signal stage2 : add1_acc_t;
+
   -- 0: "idle", doesn't advance states, entered on reset
   -- 1: multiply, enters this state when `input_start='1'`
-  -- 2: adds
-  -- 3: write, stays on this state after done
-  signal step : integer range 0 to 3;
+  -- 2: first reduction steps
+  -- 3: final reduction step + output write, stays on this state after done
+  signal step : integer range 0 to final_step;
 begin
   process(clk)
-    
+    variable sum1 : integer;
+    variable sum2 : integer;
   begin
     if (rst = '0') then
       stage1 <= (others => 0);
-      stage2 <= 0;
+      stage2 <= (others => 0);
       step   <= 0;
     elsif rising_edge(clk) then
       if (input_start = '1') then
         step <= 1;
         output_done <= '0';
-      elsif (step > 0) and (step < 3) then
+      elsif (step > 0) and (step < final_step) then
         step <= step + 1;
-      elsif (step > 0) and (step = 3) then
+      elsif (step = final_step) then
         output_done <= '1';
       end if;
-      output_pixel <= std_ulogic_vector(to_signed(stage2, 32));
-      stage2 <= stage1(0) + stage1(1) + stage1(2) + stage1(3) + stage1(4) +
-                stage1(5) + stage1(6) + stage1(7) + stage1(8);
+
+      output_pixel <= std_ulogic_vector(to_signed(stage2(0) + stage2(1), 32));
+
+      sum1 := (stage1(0) + stage1(1)) + (stage1(2) + stage1(3));
+      sum2 := (stage1(5) + stage1(6)) + (stage1(7) + stage1(8));
+      stage2(0) <= sum1 + sum2;
+      stage2(1) <= stage1(4);
+
       for i in 0 to 8 loop
         stage1(i) <= to_integer(unsigned(input_pixels(i))) * to_integer(signed(input_matrix(i)));
       end loop;
     end if;
-  end process; 
+  end process;
 end convolve_pipelined_rtl;
