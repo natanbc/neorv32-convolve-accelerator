@@ -32,16 +32,15 @@ def scaffolding(img, load_kernel, process_pixels):
         2, 0, -2,
         1, 0, -1,
     ])
-    out1 = apply_kernel(img, process_pixels)
+    out1 = apply_kernel(img, process_pixels) / 4
     load_kernel([
         -1, -2, -1,
          0,  0,  0,
          1,  2,  1
     ])
-    out2 = apply_kernel(img, process_pixels)
+    out2 = apply_kernel(img, process_pixels) / 4
     
     res = np.sqrt(np.square(out1) + np.square(out2))
-    res *= 255.0 / res.max()
     return res.astype(np.uint8)
 
 def reference(img):
