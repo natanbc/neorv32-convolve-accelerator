@@ -6,8 +6,12 @@ import scipy.signal
 import struct
 
 parser = argparse.ArgumentParser()
+parser.add_argument("image", help="Which image to work on")
 parser.add_argument("which", help="Which image to generate (reference, cxxrtl-single, cxxrtl-pipelined) or 'check' to verify if they match")
-which = parser.parse_args().which
+args = parser.parse_args()
+
+which = args.which
+image_name = args.image
 
 def reference(img):
     out1 = scipy.signal.convolve2d(img, np.array([
@@ -49,17 +53,22 @@ def cxxrtl(img, lib):
     res = np.sqrt(np.square(out1) + np.square(out2))
     return res.astype(np.uint8)
 
-img = imageio.imread("testbench/input.png")[:, :, 0].astype(np.uint8)
+reference_name = "build/{}-reference.png".format(image_name)
+cxxrtl_single_name = "build/{}-cxxrtl-single_cycle.png".format(image_name)
+cxxrtl_pipelined_name = "build/{}-cxxrtl-pipelined.png".format(image_name)
+
+
+img = imageio.imread("testbench/{}.png".format(image_name))[:, :, 0].astype(np.uint8)
 if which == "reference":
-    imageio.imwrite("build/reference.png", reference(img))
+    imageio.imwrite(reference_name, reference(img))
 elif which == "cxxrtl-single":
-    imageio.imwrite("build/cxxrtl-single_cycle.png", cxxrtl(img, "build/testbench-ffi-single_cycle.so"))
+    imageio.imwrite(cxxrtl_single_name, cxxrtl(img, "build/testbench-ffi-single_cycle.so"))
 elif which == "cxxrtl-pipelined":
-    imageio.imwrite("build/cxxrtl-pipelined.png", cxxrtl(img, "build/testbench-ffi-pipelined.so"))
+    imageio.imwrite(cxxrtl_pipelined_name, cxxrtl(img, "build/testbench-ffi-pipelined.so"))
 elif which == "check":
-    ref = imageio.imread("build/reference.png")
-    single = imageio.imread("build/cxxrtl-single_cycle.png")
-    pipelined = imageio.imread("build/cxxrtl-pipelined.png")
+    ref = imageio.imread(reference_name)
+    single = imageio.imread(cxxrtl_single_name)
+    pipelined = imageio.imread(cxxrtl_pipelined_name)
 
     ok = True
     if not np.allclose(ref, single):

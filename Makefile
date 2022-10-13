@@ -58,17 +58,24 @@ testbench-pipelined: build/testbench_pipelined
 testbench-single-cycle: build/testbench_single_cycle
 	build/testbench_single_cycle
 
-build/reference.png: testbench/image.py testbench/input.png
-	mkdir -p $(@D)
-	python3 testbench/image.py reference
-build/cxxrtl-single_cycle.png: testbench/image.py testbench/input.png build/testbench-ffi-single_cycle.so
-	python3 testbench/image.py cxxrtl-single
-build/cxxrtl-pipelined.png: testbench/image.py testbench/input.png build/testbench-ffi-pipelined.so
-	python3 testbench/image.py cxxrtl-pipelined
+define __image_test
+build/$(1)-reference.png: testbench/image.py testbench/$(1).png
+	mkdir -p $$(@D)
+	python3 testbench/image.py $(1) reference
+build/$(1)-cxxrtl-single_cycle.png: testbench/image.py testbench/$(1).png build/testbench-ffi-single_cycle.so
+	python3 testbench/image.py $(1) cxxrtl-single
+build/$(1)-cxxrtl-pipelined.png: testbench/image.py testbench/$(1).png build/testbench-ffi-pipelined.so
+	python3 testbench/image.py $(1) cxxrtl-pipelined
 
-testbench-image: build/reference.png build/cxxrtl-single_cycle.png build/cxxrtl-pipelined.png
-	python3 testbench/image.py check
+testbench-$(1)-check: build/$(1)-reference.png build/$(1)-cxxrtl-single_cycle.png build/$(1)-cxxrtl-pipelined.png
+	python3 testbench/image.py $(1) check
 
-testbench: testbench-pipelined testbench-single-cycle testbench-image
+testbench: testbench-$(1)-check
+endef
 
-.PHONY: all clean testbench testbench-pipelined testbench-single-cycle testbench-image
+$(eval $(call __image_test,possum))
+$(eval $(call __image_test,mel))
+
+testbench: testbench-pipelined testbench-single-cycle
+
+.PHONY: all clean testbench testbench-pipelined testbench-single-cycle testbench-possum-check
