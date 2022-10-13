@@ -2,79 +2,52 @@ import argparse
 import ctypes
 import imageio
 import numpy as np
+import scipy.signal
+import struct
 
 parser = argparse.ArgumentParser()
 parser.add_argument("which", help="Which image to generate (reference, cxxrtl-single, cxxrtl-pipelined) or 'check' to verify if they match")
 which = parser.parse_args().which
 
-def get(img, y, x):
-    if y < 0 or y >= img.shape[0]:
-        return 0
-    if x < 0 or x >= img.shape[1]:
-        return 0
-    return img[y, x]
+def reference(img):
+    out1 = scipy.signal.convolve2d(img, np.array([
+        [1, 0, -1],
+        [2, 0, -2],
+        [1, 0, -1],
+    ]), mode="same") / 4
+    out2 = scipy.signal.convolve2d(img, np.array([
+        [-1, -2, -1],
+        [ 0,  0,  0],
+        [ 1,  2,  1],
+    ]), mode="same") / 4
 
-def apply_kernel(img, process_pixels):
-    out = np.zeros(img.shape).astype(np.int32)
-    for y in range(img.shape[0]):
-        for x in range(img.shape[1]):
-            pixels = [
-                get(img, y - 1, x - 1), get(img, y - 1, x), get(img, y - 1, x + 1),
-                get(img, y,     x - 1), get(img, y,     x), get(img, y,     x + 1),
-                get(img, y + 1, x - 1), get(img, y + 1, x), get(img, y + 1, x + 1),
-            ]
-            out[y, x] = process_pixels(pixels)
-    return out
-
-def scaffolding(img, load_kernel, process_pixels):
-    load_kernel([
-        1, 0, -1,
-        2, 0, -2,
-        1, 0, -1,
-    ])
-    out1 = apply_kernel(img, process_pixels) / 4
-    load_kernel([
-        -1, -2, -1,
-         0,  0,  0,
-         1,  2,  1
-    ])
-    out2 = apply_kernel(img, process_pixels) / 4
-    
     res = np.sqrt(np.square(out1) + np.square(out2))
     return res.astype(np.uint8)
 
-def reference(img):
-    kernel = [[]]
-    return scaffolding(img, lambda k: kernel.append(k), lambda p: sum(a*b for a,b in zip(kernel[-1], p)))
-
 def cxxrtl(img, lib):
+    height, width = img.shape
+
     dll = ctypes.CDLL(lib)
-    ptr = dll.sim_new()
 
-    is_done = dll.sim_is_done
-    is_done.restype = ctypes.c_bool
-    get_out = dll.sim_get_output
-    get_out.restype = ctypes.c_int
+    pixel_buffer = ctypes.create_string_buffer(bytes([x & 0xFF for x in img.ravel()]))
+    def apply(kernel):
+        img_buffer = ctypes.create_string_buffer(height * width * 4)
+        kernel_buffer = ctypes.create_string_buffer(bytes([x & 0xFF for x in kernel]))
+        dll.sim_apply(img_buffer, kernel_buffer, pixel_buffer, ctypes.c_uint(width), ctypes.c_uint(height))
+        return np.array([struct.unpack("={}i".format(width*height), img_buffer.raw)]).reshape(height, width)
+    out1 = apply([
+        1, 0, -1,
+        2, 0, -2,
+        1, 0, -1,
+    ]) / 4
+    out2 = apply([
+        -1, -2, -1,
+         0,  0,  0,
+         1,  2,  1,
+    ]) / 4
 
-    def load_kernel(k):
-        buffer = ctypes.create_string_buffer(bytes([x & 0xFF for x in k]))
-        dll.sim_set_matrix(ptr, buffer)
-
-    def process_pixels(p):
-        buffer = ctypes.create_string_buffer(bytes([x & 0xFF for x in p]))
-        dll.sim_set_pixels(ptr, buffer)
-        dll.sim_set_start(ptr, ctypes.c_bool(True))
-        dll.sim_clock(ptr)
-        dll.sim_set_start(ptr, ctypes.c_bool(False))
-        for i in range(6):
-            dll.sim_clock(ptr)
-            if is_done(ptr):
-                return get_out(ptr)
-        raise Exception("Did not finish in time")
-
-    out = scaffolding(img, load_kernel, process_pixels)
-    dll.sim_free(ptr)
-    return out
+    res = np.sqrt(np.square(out1) + np.square(out2))
+    return res.astype(np.uint8)
 
 img = imageio.imread("testbench/input.png")[:, :, 0].astype(np.uint8)
 if which == "reference":
