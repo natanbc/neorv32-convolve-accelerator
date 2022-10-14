@@ -35,7 +35,7 @@ static inline int32_t run_once(cxxrtl_design::TOP& top) {
     clock(top);
     top.p_input__start.set(false);
     clock(top);
-    for(size_t i = 0; i < 40; i++) {
+    for(size_t i = 0; i < 45; i++) {
         if(top.p_output__done.get<bool>()) {
             return (int32_t)top.p_output__pixel.get<uint32_t>();
         }

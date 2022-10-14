@@ -26,8 +26,8 @@ architecture convolve_serial_rtl of convolve_serial is
 
   type state is (
     idle,
-    multiply1_1, multiply2_1, reduce1_1, reduce2_1, square_1,
-    multiply1_2, multiply2_2, reduce1_2, reduce2_2, square_2,
+    multiply_1, multiply_wait_1, reduce1_1, reduce2_1, square_1,
+    multiply_2, multiply_wait_2, reduce1_2, reduce2_2, square_2,
     sqrt, sqrt_wait0, sqrt_wait, done
   );
   signal step : state;
@@ -37,7 +37,8 @@ architecture convolve_serial_rtl of convolve_serial is
   signal multiply_res_2 : multiply_result;
 
   signal multiply_input_matrix : matrix_regs_t;
-  signal multiply_output       : multiply_result;
+  signal multiply_output       : integer;
+  signal multiply_step         : integer range 0 to 8;
 
   type reduce1_result is array (0 to 1) of integer;
   signal reduce1_res_1 : reduce1_result;
@@ -97,18 +98,23 @@ begin
       case step is
         when idle =>
           if (input_start = '1') then
-            step <= multiply1_1;
+            step <= multiply_1;
             output_done <= '0';
             sqrt_start <= '0';
           end if;
 
-        when multiply1_1 =>
+        when multiply_1 =>
           multiply_input_matrix <= input_matrix1;
-          step <= multiply2_1;
+          multiply_step <= 0;
+          step <= multiply_wait_1;
 
-        when multiply2_1 =>
-          multiply_res_1 <= multiply_output;
-          step <= reduce1_1;
+        when multiply_wait_1 =>
+          multiply_res_1(multiply_step) <= multiply_output;
+          if (multiply_step = 8) then
+            step <= reduce1_1;
+          else
+            multiply_step <= multiply_step + 1;
+          end if;
 
         when reduce1_1 =>
           reduce1_sum1 := (multiply_res_1(0) + multiply_res_1(1)) + (multiply_res_1(2) + multiply_res_1(3));
@@ -123,15 +129,20 @@ begin
 
         when square_1 =>
           square_res_1 <= reduce2_res_1 * reduce2_res_1;
-          step <= multiply1_2;
+          step <= multiply_2;
         
-        when multiply1_2 =>
+        when multiply_2 =>
           multiply_input_matrix <= input_matrix2;
-          step <= multiply2_2;
+          multiply_step <= 0;
+          step <= multiply_wait_2;
 
-        when multiply2_2 =>
-          multiply_res_2 <= multiply_output;
-          step <= reduce1_2;
+        when multiply_wait_2 =>
+          multiply_res_2(multiply_step) <= multiply_output;
+          if (multiply_step = 8) then
+            step <= reduce1_2;
+          else
+            multiply_step <= multiply_step + 1;
+          end if;
 
         when reduce1_2 =>
           reduce1_sum1 := (multiply_res_2(0) + multiply_res_2(1)) + (multiply_res_2(2) + multiply_res_2(3));
@@ -163,7 +174,7 @@ begin
 
         when done =>
           if (input_start = '1') then
-            step         <= multiply1_1;
+            step         <= multiply_1;
           else
             output_done  <= '1';
           end if;
@@ -174,8 +185,6 @@ begin
       end case;
     end if;
   end process;
-  
-  mult_loop: for i in 0 to 8 generate
-    multiply_output(i) <= to_integer(unsigned(input_pixels(i))) * to_integer(signed(multiply_input_matrix(i)));
-  end generate;
+
+  multiply_output <= to_integer(unsigned(input_pixels(multiply_step))) * to_integer(signed(multiply_input_matrix(multiply_step)));
 end convolve_serial_rtl;

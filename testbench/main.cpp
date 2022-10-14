@@ -71,7 +71,7 @@ static int test(cxxrtl_design::TOP& top, const uint8_t pixels[9]) {
     top.p_input__start.set(false);
 
     uint32_t start = cycles;
-    for(int i = 0; i < 40; i++) {
+    for(int i = 0; i < 45; i++) {
         clock(top);
         std::cout << "[cycle " << std::dec << cycles << "]:";
         std::cout << " conv1 = " << std::hex << top.p_output__conv1.get<uint32_t>();
@@ -84,15 +84,16 @@ static int test(cxxrtl_design::TOP& top, const uint8_t pixels[9]) {
         }
     }
 
+    bool ok = true;
     if(!top.p_output__done.get<bool>()) {
         std::cout << "FAIL: did not finish in a reasonable amount of time" << std::endl;
-        return 1;
+        ok = false;
+    } else {
+        ok &= check_out("conv1", (uint32_t)expected_conv1, top.p_output__conv1.get<uint32_t>());
+        ok &= check_out("conv2", (uint32_t)expected_conv2, top.p_output__conv2.get<uint32_t>());
+        ok &= check_out("pixel", (uint32_t)expected_pixel, top.p_output__pixel.get<uint32_t>());
     }
 
-    bool ok = true;
-    ok &= check_out("conv1", (uint32_t)expected_conv1, top.p_output__conv1.get<uint32_t>());
-    ok &= check_out("conv2", (uint32_t)expected_conv2, top.p_output__conv2.get<uint32_t>());
-    ok &= check_out("pixel", (uint32_t)expected_pixel, top.p_output__pixel.get<uint32_t>());
     if(!ok) {
         for(int i = 0; i < 20; i++) {
             clock(top);
