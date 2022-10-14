@@ -1,6 +1,7 @@
 #include <cmath>
 #include <cstdint>
 #include <iostream>
+#include <sstream>
 #include "top.cpp"
 
 const int8_t  matrix1[9] = {1, 0, -1, 2, 0, -2, 1, 0, -1};
@@ -84,25 +85,39 @@ static int test(cxxrtl_design::TOP& top, const uint8_t pixels[9]) {
         }
     }
 
+    std::stringstream error_trace;
     bool ok = true;
     if(!top.p_output__done.get<bool>()) {
         std::cout << "FAIL: did not finish in a reasonable amount of time" << std::endl;
         ok = false;
+        for(int i = 0; i < 50; i++) {
+            clock(top);
+            error_trace << "[cycle " << std::dec << cycles << "]:";
+            error_trace << " conv1 = " << std::hex << top.p_output__conv1.get<uint32_t>();
+            error_trace << " conv2 = " << std::hex << top.p_output__conv2.get<uint32_t>();
+            error_trace << " pixel = " << std::hex << top.p_output__pixel.get<uint32_t>();
+            error_trace << std::endl;
+        }
     } else {
-        ok &= check_out("conv1", (uint32_t)expected_conv1, top.p_output__conv1.get<uint32_t>());
-        ok &= check_out("conv2", (uint32_t)expected_conv2, top.p_output__conv2.get<uint32_t>());
-        ok &= check_out("pixel", (uint32_t)expected_pixel, top.p_output__pixel.get<uint32_t>());
+        ok &= check_out("conv1 immediate", (uint32_t)expected_conv1, top.p_output__conv1.get<uint32_t>());
+        ok &= check_out("conv2 immediate", (uint32_t)expected_conv2, top.p_output__conv2.get<uint32_t>());
+        ok &= check_out("pixel immediate", (uint32_t)expected_pixel, top.p_output__pixel.get<uint32_t>());
+        //check if results stay even if it keeps getting clocked
+        for(int i = 0; i < 50; i++) {
+            clock(top);
+            error_trace << "[cycle " << std::dec << cycles << "]:";
+            error_trace << " conv1 = " << std::hex << top.p_output__conv1.get<uint32_t>();
+            error_trace << " conv2 = " << std::hex << top.p_output__conv2.get<uint32_t>();
+            error_trace << " pixel = " << std::hex << top.p_output__pixel.get<uint32_t>();
+            error_trace << std::endl;
+        }
+        ok &= check_out("conv1 delayed  ", (uint32_t)expected_conv1, top.p_output__conv1.get<uint32_t>());
+        ok &= check_out("conv2 delayed  ", (uint32_t)expected_conv2, top.p_output__conv2.get<uint32_t>());
+        ok &= check_out("pixel delayed  ", (uint32_t)expected_pixel, top.p_output__pixel.get<uint32_t>());
     }
 
     if(!ok) {
-        for(int i = 0; i < 20; i++) {
-            clock(top);
-            std::cout << "[cycle " << std::dec << cycles << "]:";
-            std::cout << " conv1 = " << std::hex << top.p_output__conv1.get<uint32_t>();
-            std::cout << " conv2 = " << std::hex << top.p_output__conv2.get<uint32_t>();
-            std::cout << " pixel = " << std::hex << top.p_output__pixel.get<uint32_t>();
-            std::cout << std::endl;
-        }
+        std::cout << error_trace.str() << std::endl;
         return 1;
     }
     return 0;

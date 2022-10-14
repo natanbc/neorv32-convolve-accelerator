@@ -175,13 +175,13 @@ begin
         when done =>
           if (input_start = '1') then
             step         <= multiply_1;
+            sqrt_start   <= '0';
           else
             output_done  <= '1';
           end if;
           output_conv1 <= std_ulogic_vector(to_signed(reduce2_res_1, 32));
           output_conv2 <= std_ulogic_vector(to_signed(reduce2_res_2, 32));
           output_pixel(sqrt_out_bits - 1 downto 0) <= sqrt_res;
-          sqrt_start   <= '0';
       end case;
     end if;
   end process;
