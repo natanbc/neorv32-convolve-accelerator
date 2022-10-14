@@ -1,3 +1,4 @@
+#include <cmath>
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
@@ -29,14 +30,14 @@ static inline void clock(cxxrtl_design::TOP& top) {
     top.step();
 }
 
-static inline uint32_t run_once(cxxrtl_design::TOP& top) {
+static inline int32_t run_once(cxxrtl_design::TOP& top) {
     top.p_input__start.set(true);
     clock(top);
     top.p_input__start.set(false);
     clock(top);
-    for(size_t i = 0; i < 10; i++) {
+    for(size_t i = 0; i < 40; i++) {
         if(top.p_output__done.get<bool>()) {
-            return top.p_output__pixel.get<uint32_t>();
+            return (int32_t)top.p_output__pixel.get<uint32_t>();
         }
         clock(top);
     }
@@ -50,7 +51,7 @@ static inline void shift(uint8_t* data, uint8_t next) {
 }
 
 extern "C" {
-    void sim_apply(int32_t* out, const int8_t* kernel, const uint8_t* image, uint32_t width, uint32_t height) {
+    void sim_apply(int32_t* out, int32_t* conv1, int32_t* conv2, const int8_t* kernel1, const int8_t* kernel2, const uint8_t* image, uint32_t width, uint32_t height) {
         cxxrtl_design::TOP top;
 
         top.step();
@@ -59,7 +60,8 @@ extern "C" {
         top.p_rst.set(true);
         top.step();
 
-        set_arr(top.p_input__matrix, kernel);
+        set_arr(top.p_input__matrix1, kernel1);
+        set_arr(top.p_input__matrix2, kernel2);
 
         uint8_t pixel_data[9] = {0};
         for(uint32_t y = 0; y < height; y++) {
@@ -78,7 +80,9 @@ extern "C" {
                     shift(&pixel_data[6], 0);
                 }
                 set_arr(top.p_input__pixels, pixel_data);
-                out[width*y + x] = run_once(top);
+                out[width*y + x] = run_once(top) / 4;
+                conv1[width*y+x] = (int32_t)top.p_output__conv1.get<uint32_t>();
+                conv2[width*y+x] = (int32_t)top.p_output__conv2.get<uint32_t>();
             }
         }
     }

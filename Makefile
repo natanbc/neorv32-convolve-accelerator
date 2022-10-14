@@ -1,4 +1,4 @@
-CONVOLVE_SOURCES=convolve.vhd $(wildcard convolve_*.vhd)
+CONVOLVE_SOURCES=convolve.vhd convolve_parallel.vhd convolve_serial.vhd isqrt.vhd
 
 CXXRTL_CXX_FLAGS=-g -O3 -std=c++14 -I $(shell yosys-config --datdir)/include
 
@@ -21,61 +21,62 @@ all: $(SOURCES)
 clean:
 	rm -rf build db incremental_db output_files
 
-build/pipelined/work-obj08.cf: $(CONVOLVE_SOURCES)
+build/parallel/work-obj08.cf: $(CONVOLVE_SOURCES)
 	mkdir -p $(@D)
 	ghdl -a $(GHDL_FLAGS) --workdir=$(@D) -P$(@D) --work=work $(CONVOLVE_SOURCES)
-build/single_cycle/work-obj08.cf: $(CONVOLVE_SOURCES)
+build/serial/work-obj08.cf: $(CONVOLVE_SOURCES)
 	mkdir -p $(@D)
 	ghdl -a $(GHDL_FLAGS) --workdir=$(@D) -P$(@D) --work=work $(CONVOLVE_SOURCES)
 
-build/pipelined/top.cpp: build/pipelined/work-obj08.cf
+build/parallel/top.cpp: build/parallel/work-obj08.cf
 	$(YOSYS) $(YOSYS_FLAGS)                                                             \
 		-p                                                                              \
-		"ghdl $(GHDL_FLAGS) --workdir=$(@D) -P$(@D) --no-formal convolve_pipelined;     \
+		"ghdl $(GHDL_FLAGS) --workdir=$(@D) -P$(@D) --no-formal convolve_parallel;      \
 		write_cxxrtl $@"
-build/single_cycle/top.cpp: build/single_cycle/work-obj08.cf
+build/serial/top.cpp: build/serial/work-obj08.cf
 	$(YOSYS) $(YOSYS_FLAGS)                                                             \
 		-p                                                                              \
-		"ghdl $(GHDL_FLAGS) --workdir=$(@D) -P$(@D) --no-formal convolve_single_cycle;  \
+		"ghdl $(GHDL_FLAGS) --workdir=$(@D) -P$(@D) --no-formal convolve_serial;        \
 		write_cxxrtl $@"
 
-#build/testbench_pipelined: build/pipelined/top.cpp testbench/pipelined.cpp
-#	$(CXX) $(CXXRTL_CXX_FLAGS) -I build/pipelined testbench/pipelined.cpp -o $@
-#build/testbench_single_cycle: build/single_cycle/top.cpp testbench/syngle_cycle.cpp
-#	$(CXX) $(CXXRTL_CXX_FLAGS) -I build/single_cycle testbench/single_cycle.cpp -o $@
-build/testbench_pipelined: build/pipelined/top.cpp testbench/main.cpp
-	$(CXX) $(CXXRTL_CXX_FLAGS) -I build/pipelined -DTOP=p_convolve__pipelined testbench/main.cpp -o $@
-build/testbench_single_cycle: build/single_cycle/top.cpp testbench/main.cpp
-	$(CXX) $(CXXRTL_CXX_FLAGS) -I build/single_cycle -DTOP=p_convolve__single__cycle testbench/main.cpp -o $@
+#build/testbench_parallel: build/parallel/top.cpp testbench/parallel.cpp
+#	$(CXX) $(CXXRTL_CXX_FLAGS) -I build/parallel testbench/parallel.cpp -o $@
+#build/testbench_serial: build/serial/top.cpp testbench/syngle_cycle.cpp
+#	$(CXX) $(CXXRTL_CXX_FLAGS) -I build/serial testbench/serial.cpp -o $@
+build/testbench_parallel: build/parallel/top.cpp testbench/main.cpp
+	$(CXX) $(CXXRTL_CXX_FLAGS) -I build/parallel -DTOP=p_convolve__parallel testbench/main.cpp -o $@
+build/testbench_serial: build/serial/top.cpp testbench/main.cpp
+	$(CXX) $(CXXRTL_CXX_FLAGS) -I build/serial -DTOP=p_convolve__serial testbench/main.cpp -o $@
 
-build/testbench-ffi-pipelined.so: build/pipelined/top.cpp testbench/ffi.cpp
-	$(CXX) $(CXXRTL_CXX_FLAGS) -shared -fPIC -I build/pipelined -DTOP=p_convolve__pipelined testbench/ffi.cpp -o $@
-build/testbench-ffi-single_cycle.so: build/single_cycle/top.cpp testbench/ffi.cpp
-	$(CXX) $(CXXRTL_CXX_FLAGS) -shared -fPIC -I build/single_cycle -DTOP=p_convolve__single__cycle testbench/ffi.cpp -o $@
+build/testbench-ffi-parallel.so: build/parallel/top.cpp testbench/ffi.cpp
+	$(CXX) $(CXXRTL_CXX_FLAGS) -shared -fPIC -I build/parallel -DTOP=p_convolve__parallel testbench/ffi.cpp -o $@
+build/testbench-ffi-serial.so: build/serial/top.cpp testbench/ffi.cpp
+	$(CXX) $(CXXRTL_CXX_FLAGS) -shared -fPIC -I build/serial -DTOP=p_convolve__serial testbench/ffi.cpp -o $@
 
-testbench-pipelined: build/testbench_pipelined
-	build/testbench_pipelined
-testbench-single-cycle: build/testbench_single_cycle
-	build/testbench_single_cycle
+testbench-parallel: build/testbench_parallel
+	build/testbench_parallel
+testbench-serial: build/testbench_serial
+	build/testbench_serial
+testbench: testbench-parallel testbench-serial
+.PHONY: testbench-parallel testbench-serial
 
 define __image_test
 build/$(1)-reference.png: testbench/image.py testbench/$(1).png
 	mkdir -p $$(@D)
 	python3 testbench/image.py $(1) reference
-build/$(1)-cxxrtl-single_cycle.png: testbench/image.py testbench/$(1).png build/testbench-ffi-single_cycle.so
-	python3 testbench/image.py $(1) cxxrtl-single
-build/$(1)-cxxrtl-pipelined.png: testbench/image.py testbench/$(1).png build/testbench-ffi-pipelined.so
-	python3 testbench/image.py $(1) cxxrtl-pipelined
+build/$(1)-cxxrtl-serial.png: testbench/image.py testbench/$(1).png build/testbench-ffi-serial.so
+	python3 testbench/image.py $(1) cxxrtl-serial
+build/$(1)-cxxrtl-parallel.png: testbench/image.py testbench/$(1).png build/testbench-ffi-parallel.so
+	python3 testbench/image.py $(1) cxxrtl-parallel
 
-testbench-$(1)-check: build/$(1)-reference.png build/$(1)-cxxrtl-single_cycle.png build/$(1)-cxxrtl-pipelined.png
+testbench-$(1)-check: build/$(1)-reference.png build/$(1)-cxxrtl-serial.png build/$(1)-cxxrtl-parallel.png
 	python3 testbench/image.py $(1) check
 
 testbench: testbench-$(1)-check
+.PHONY: testbench-$(1)-check
 endef
 
 $(eval $(call __image_test,possum))
 $(eval $(call __image_test,mel))
 
-testbench: testbench-pipelined testbench-single-cycle
-
-.PHONY: all clean testbench testbench-pipelined testbench-single-cycle testbench-possum-check
+.PHONY: all clean testbench

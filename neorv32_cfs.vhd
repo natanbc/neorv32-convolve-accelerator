@@ -7,6 +7,7 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_cfs is
   generic (
+    PARALLEL     : boolean := true;
     CFS_CONFIG   : std_ulogic_vector(31 downto 0);
     CFS_IN_SIZE  : positive;
     CFS_OUT_SIZE : positive
@@ -51,26 +52,44 @@ architecture neorv32_cfs_rtl of neorv32_cfs is
   type pixel_regs_t is array (0 to 8) of std_ulogic_vector(7 downto 0);
   type matrix_regs_t is array (0 to 8) of std_ulogic_vector(7 downto 0);
   
-  signal input_start  : std_ulogic;
-  signal input_pixels : pixel_regs_t;
-  signal input_matrix : matrix_regs_t;
-  signal output_pixel : std_ulogic_vector(31 downto 0);
-  signal output_done  : std_ulogic;
+  signal input_start   : std_ulogic;
+  signal input_pixels  : pixel_regs_t;
+  signal input_matrix1 : matrix_regs_t;
+  signal input_matrix2 : matrix_regs_t;
+  signal output_conv1  : std_ulogic_vector(31 downto 0);
+  signal output_conv2  : std_ulogic_vector(31 downto 0);
+  signal output_pixel  : std_ulogic_vector(31 downto 0);
+  signal output_done   : std_ulogic;
 
-  component convolve is
-    generic (
-      PIPELINED : boolean
-    );
+  component convolve_parallel is
     port (
-      clk          : in std_ulogic;
-      rst          : in std_ulogic;
-      input_start  : in std_ulogic;
-      input_pixels : in pixel_regs_t;
-      input_matrix : in matrix_regs_t;
-      output_pixel : out std_ulogic_vector(31 downto 0);
-      output_done  : out std_ulogic
+      clk           : in std_ulogic;
+      rst           : in std_ulogic;
+      input_start   : in std_ulogic;
+      input_pixels  : in pixel_regs_t;
+      input_matrix1 : in matrix_regs_t;
+      input_matrix2 : in matrix_regs_t;
+      output_conv1  : out std_ulogic_vector(31 downto 0);
+      output_conv2  : out std_ulogic_vector(31 downto 0);
+      output_pixel  : out std_ulogic_vector(31 downto 0);
+      output_done   : out std_ulogic
     );
-  end component convolve;
+  end component convolve_parallel;
+
+  component convolve_serial is
+    port (
+      clk           : in std_ulogic;
+      rst           : in std_ulogic;
+      input_start   : in std_ulogic;
+      input_pixels  : in pixel_regs_t;
+      input_matrix1 : in matrix_regs_t;
+      input_matrix2 : in matrix_regs_t;
+      output_conv1  : out std_ulogic_vector(31 downto 0);
+      output_conv2  : out std_ulogic_vector(31 downto 0);
+      output_pixel  : out std_ulogic_vector(31 downto 0);
+      output_done   : out std_ulogic
+    );
+  end component convolve_serial;
 begin
 
   -- Access Control -------------------------------------------------------------------------
@@ -90,26 +109,44 @@ begin
 
   err_o <= '0'; -- no errors possible
   
-  convolve_impl: convolve
-  generic map (
-    PIPELINED => true
-  )
-  port map(
-    clk          => clk_i,
-    rst          => rstn_i,
-    input_start  => input_start,
-    input_pixels => input_pixels,
-    input_matrix => input_matrix,
-    output_pixel => output_pixel,
-    output_done  => output_done
-  );
-
+  convolve_parallel_true: if (PARALLEL = true) generate
+    convolve_impl: convolve_parallel
+    port map (
+      clk           => clk_i,
+      rst           => rstn_i,
+      input_start   => input_start,
+      input_pixels  => input_pixels,
+      input_matrix1 => input_matrix1,
+      input_matrix2 => input_matrix2,
+      output_conv1  => output_conv1,
+      output_conv2  => output_conv2,
+      output_pixel  => output_pixel,
+      output_done   => output_done
+    );
+  end generate;
+  
+  convolve_parallel_false: if (PARALLEL = false) generate
+    convolve_impl: convolve_serial
+    port map (
+      clk           => clk_i,
+      rst           => rstn_i,
+      input_start   => input_start,
+      input_pixels  => input_pixels,
+      input_matrix1 => input_matrix1,
+      input_matrix2 => input_matrix2,
+      output_conv1  => output_conv1,
+      output_conv2  => output_conv2,
+      output_pixel  => output_pixel,
+      output_done   => output_done
+    );
+  end generate;
 
   host_access: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      input_pixels <= (others => (others => '0'));
-      input_matrix <= (others => (others => '0'));
+      input_pixels  <= (others => (others => '0'));
+      input_matrix1 <= (others => (others => '0'));
+      input_matrix2 <= (others => (others => '0'));
       --
       ack_o  <= '-'; -- no actual reset required
       data_o <= (others => '-'); -- no actual reset required
@@ -160,19 +197,34 @@ begin
         end if;
         -- matrix load registers
         if (addr = cfs_reg7_addr_c) then
-          input_matrix(0) <= data_i(7 downto 0);
-          input_matrix(1) <= data_i(15 downto 8);
-          input_matrix(2) <= data_i(23 downto 16);
+          input_matrix1(0) <= data_i(7 downto 0);
+          input_matrix1(1) <= data_i(15 downto 8);
+          input_matrix1(2) <= data_i(23 downto 16);
         end if;
         if (addr = cfs_reg8_addr_c) then
-          input_matrix(3) <= data_i(7 downto 0);
-          input_matrix(4) <= data_i(15 downto 8);
-          input_matrix(5) <= data_i(23 downto 16);
+          input_matrix1(3) <= data_i(7 downto 0);
+          input_matrix1(4) <= data_i(15 downto 8);
+          input_matrix1(5) <= data_i(23 downto 16);
         end if;
         if (addr = cfs_reg9_addr_c) then
-          input_matrix(6) <= data_i(7 downto 0);
-          input_matrix(7) <= data_i(15 downto 8);
-          input_matrix(8) <= data_i(23 downto 16);
+          input_matrix1(6) <= data_i(7 downto 0);
+          input_matrix1(7) <= data_i(15 downto 8);
+          input_matrix1(8) <= data_i(23 downto 16);
+        end if;
+        if (addr = cfs_reg10_addr_c) then
+          input_matrix2(0) <= data_i(7 downto 0);
+          input_matrix2(1) <= data_i(15 downto 8);
+          input_matrix2(2) <= data_i(23 downto 16);
+        end if;
+        if (addr = cfs_reg11_addr_c) then
+          input_matrix2(3) <= data_i(7 downto 0);
+          input_matrix2(4) <= data_i(15 downto 8);
+          input_matrix2(5) <= data_i(23 downto 16);
+        end if;
+        if (addr = cfs_reg12_addr_c) then
+          input_matrix2(6) <= data_i(7 downto 0);
+          input_matrix2(7) <= data_i(15 downto 8);
+          input_matrix2(8) <= data_i(23 downto 16);
         end if;
       end if;
 
@@ -182,8 +234,10 @@ begin
         case addr is
           -- status register
           when cfs_reg0_addr_c => data_o(0) <= output_done;
-          -- output register
+          -- output registers
           when cfs_reg1_addr_c => data_o <= output_pixel;
+          when cfs_reg2_addr_c => data_o <= output_conv1;
+          when cfs_reg3_addr_c => data_o <= output_conv2;
           when others          => data_o <= (others => '0');
         end case;
       end if;
