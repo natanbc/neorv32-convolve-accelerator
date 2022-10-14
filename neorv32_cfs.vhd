@@ -122,57 +122,57 @@ begin
       input_start <= '0';
       -- write access --
       if (wren = '1') then
-        -- pixel load registers
+        -- control register
         if (addr = cfs_reg0_addr_c) then
+          input_start <= data_i(0);
+        end if;
+        -- pixel load registers
+        if (addr = cfs_reg1_addr_c) then
           input_pixels(0) <= data_i(7 downto 0);
           input_pixels(1) <= data_i(15 downto 8);
           input_pixels(2) <= data_i(23 downto 16);
         end if;
-        if (addr = cfs_reg1_addr_c) then
+        if (addr = cfs_reg2_addr_c) then
           input_pixels(3) <= data_i(7 downto 0);
           input_pixels(4) <= data_i(15 downto 8);
           input_pixels(5) <= data_i(23 downto 16);
         end if;
-        if (addr = cfs_reg2_addr_c) then
+        if (addr = cfs_reg3_addr_c) then
           input_pixels(6) <= data_i(7 downto 0);
           input_pixels(7) <= data_i(15 downto 8);
           input_pixels(8) <= data_i(23 downto 16);
         end if;
-        -- matrix load registers
-        if (addr = cfs_reg3_addr_c) then
-          input_matrix(0) <= data_i(7 downto 0);
-          input_matrix(1) <= data_i(15 downto 8);
-          input_matrix(2) <= data_i(23 downto 16);
-        end if;
-        if (addr = cfs_reg4_addr_c) then
-          input_matrix(3) <= data_i(7 downto 0);
-          input_matrix(4) <= data_i(15 downto 8);
-          input_matrix(5) <= data_i(23 downto 16);
-        end if;
-        if (addr = cfs_reg5_addr_c) then
-          input_matrix(6) <= data_i(7 downto 0);
-          input_matrix(7) <= data_i(15 downto 8);
-          input_matrix(8) <= data_i(23 downto 16);
-        end if;
-        -- start register
-        if (addr = cfs_reg6_addr_c) then
-          input_start <= '1';
-        end if;
         -- pixel shift registers
-        if (addr = cfs_reg7_addr_c) then
+        if (addr = cfs_reg4_addr_c) then
           input_pixels(0) <= input_pixels(1);
           input_pixels(1) <= input_pixels(2);
           input_pixels(2) <= data_i(7 downto 0);
         end if;
-        if (addr = cfs_reg8_addr_c) then
+        if (addr = cfs_reg5_addr_c) then
           input_pixels(3) <= input_pixels(4);
           input_pixels(4) <= input_pixels(5);
           input_pixels(5) <= data_i(7 downto 0);
         end if;
-        if (addr = cfs_reg9_addr_c) then
+        if (addr = cfs_reg6_addr_c) then
           input_pixels(6) <= input_pixels(7);
           input_pixels(7) <= input_pixels(8);
           input_pixels(8) <= data_i(7 downto 0);
+        end if;
+        -- matrix load registers
+        if (addr = cfs_reg7_addr_c) then
+          input_matrix(0) <= data_i(7 downto 0);
+          input_matrix(1) <= data_i(15 downto 8);
+          input_matrix(2) <= data_i(23 downto 16);
+        end if;
+        if (addr = cfs_reg8_addr_c) then
+          input_matrix(3) <= data_i(7 downto 0);
+          input_matrix(4) <= data_i(15 downto 8);
+          input_matrix(5) <= data_i(23 downto 16);
+        end if;
+        if (addr = cfs_reg9_addr_c) then
+          input_matrix(6) <= data_i(7 downto 0);
+          input_matrix(7) <= data_i(15 downto 8);
+          input_matrix(8) <= data_i(23 downto 16);
         end if;
       end if;
 
@@ -180,10 +180,10 @@ begin
       data_o <= (others => '0');
       if (rden = '1') then
         case addr is
-          -- output register
-          when cfs_reg0_addr_c => data_o <= output_pixel;
           -- status register
-          when cfs_reg1_addr_c => data_o(0) <= output_done;
+          when cfs_reg0_addr_c => data_o(0) <= output_done;
+          -- output register
+          when cfs_reg1_addr_c => data_o <= output_pixel;
           when others          => data_o <= (others => '0');
         end case;
       end if;
