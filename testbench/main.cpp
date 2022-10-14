@@ -10,6 +10,19 @@ const uint8_t pixels1[9] = {0, 0, 0, 0, 0xff, 0xff, 0, 0xff, 0xff};
 const uint8_t pixels2[9] = {183, 112, 37, 166, 159, 64, 250, 96, 186};
 const uint8_t pixels3[9] = {35, 224, 27, 192, 189, 58, 167, 235, 175};
 
+enum merge_mode {
+    conv_merge_none = 0,
+    conv_merge_sqrt_sum_of_squares = 1,
+    conv_merge_or = 2,
+    conv_merge_avg = 3,
+};
+const char* MODE_NAMES[4] = {
+    "conv_merge_none",
+    "conv_merge_sqrt_sum_of_squares",
+    "conv_merge_or",
+    "conv_merge_avg",
+};
+
 template<size_t i, typename T>
 static void setb(value<72>& v, const T vals[9]) {
     v.slice<8*(i+1) - 1, 8*i>() = value<8> { static_cast<uint8_t>(vals[i]) };
@@ -58,11 +71,24 @@ static bool check_out(const char* name, T expected, T actual) {
     return true;
 }
 
-static int test(cxxrtl_design::TOP& top, const uint8_t pixels[9]) {
+static int test(cxxrtl_design::TOP& top, const uint8_t pixels[9], merge_mode mode) {
     int32_t expected_conv1 = conv(pixels, matrix1);
     int32_t expected_conv2 = conv(pixels, matrix2);
-    int16_t expected_pixel = std::sqrt(expected_conv1 * expected_conv1 + expected_conv2 * expected_conv2);
+    int32_t expected_pixel;
+    if(mode == conv_merge_none) {
+        expected_pixel = 0;
+    } else if(mode == conv_merge_sqrt_sum_of_squares) {
+        expected_pixel = (int16_t)std::sqrt(expected_conv1 * expected_conv1 + expected_conv2 * expected_conv2);
+    } else if(mode == conv_merge_or) {
+        expected_pixel = (int32_t)((uint32_t)expected_conv1 | (uint32_t)expected_conv2);
+    } else if(mode == conv_merge_avg) {
+        expected_pixel = (expected_conv1 + expected_conv2) / 2;
+    } else {
+        std::cout << "Unimplemented mode" << std::endl;
+        return 1;
+    }
 
+    top.p_input__mode = value<2> { mode };
     set_arr(top.p_input__matrix1, matrix1);
     set_arr(top.p_input__matrix2, matrix2);
     set_arr(top.p_input__pixels, pixels);
@@ -71,6 +97,7 @@ static int test(cxxrtl_design::TOP& top, const uint8_t pixels[9]) {
     clock(top);
     top.p_input__start.set(false);
 
+    std::cout << "Testing mode " << MODE_NAMES[mode] << std::endl;
     uint32_t start = cycles;
     for(int i = 0; i < 45; i++) {
         clock(top);
@@ -118,6 +145,7 @@ static int test(cxxrtl_design::TOP& top, const uint8_t pixels[9]) {
 
     if(!ok) {
         std::cout << error_trace.str() << std::endl;
+        std::cout << MODE_NAMES[mode] << " failed" << std::endl;
         return 1;
     }
     return 0;
@@ -132,9 +160,11 @@ int main() {
     top.step();
 
     int r;
-    if((r = test(top, pixels1)) != 0) return r;
-    if((r = test(top, pixels2)) != 0) return r;
-    if((r = test(top, pixels3)) != 0) return r;
+    for(int i = 0; i < 4; i++) {
+        if((r = test(top, pixels1, (merge_mode)i)) != 0) return r;
+        if((r = test(top, pixels2, (merge_mode)i)) != 0) return r;
+        if((r = test(top, pixels3, (merge_mode)i)) != 0) return r;
+    }
 
 }
 

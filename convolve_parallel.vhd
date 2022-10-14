@@ -14,6 +14,7 @@ entity convolve_parallel is
     input_pixels  : in pixel_regs_t;
     input_matrix1 : in matrix_regs_t;
     input_matrix2 : in matrix_regs_t;
+    input_mode    : in conv_merge_mode_t;
     output_conv1  : out std_ulogic_vector(31 downto 0);
     output_conv2  : out std_ulogic_vector(31 downto 0);
     output_pixel  : out std_ulogic_vector(31 downto 0);
@@ -26,6 +27,8 @@ architecture convolve_parallel_rtl of convolve_parallel is
 
   type state is (idle, multiply, reduce1, reduce2, square, sqrt, sqrt_wait0, sqrt_wait, done);
   signal step : state;
+
+  signal saved_mode : conv_merge_mode_t;
 
   type multiply_result is array (0 to 8) of integer;
   signal multiply_res_1 : multiply_result;
@@ -78,6 +81,9 @@ begin
     variable reduce1_sum2 : integer;
     variable reduce1_sum3 : integer;
     variable reduce1_sum4 : integer;
+
+    variable conv1_bits : std_ulogic_vector(31 downto 0);
+    variable conv2_bits : std_ulogic_vector(31 downto 0);
   begin
     if (rst = '0') then
       step         <= idle;
@@ -92,8 +98,8 @@ begin
         when idle =>
           if (input_start = '1') then
             step <= multiply;
-            output_done <= '0';
             sqrt_start <= '0';
+            saved_mode <= input_mode;
           end if;
 
         when multiply =>
@@ -121,7 +127,13 @@ begin
         when reduce2 =>
           reduce2_res_1 <= reduce1_res_1(0) + reduce1_res_1(1);
           reduce2_res_2 <= reduce1_res_2(0) + reduce1_res_2(1);
-          step <= square;
+          case saved_mode is
+            when conv_merge_sqrt_sum_of_squares =>
+              step <= square;
+
+            when others =>
+              step <= done;
+          end case;
 
         when square =>
           square_res_1 <= reduce2_res_1 * reduce2_res_1;
@@ -145,12 +157,28 @@ begin
           if (input_start = '1') then
             step         <= multiply;
             sqrt_start   <= '0';
+            saved_mode   <= input_mode;
           else
             output_done  <= '1';
           end if;
-          output_conv1 <= std_ulogic_vector(to_signed(reduce2_res_1, 32));
-          output_conv2 <= std_ulogic_vector(to_signed(reduce2_res_2, 32));
-          output_pixel(sqrt_out_bits - 1 downto 0) <= sqrt_res;
+          conv1_bits := std_ulogic_vector(to_signed(reduce2_res_1, 32));
+          conv2_bits := std_ulogic_vector(to_signed(reduce2_res_2, 32));
+
+          output_conv1 <= conv1_bits;
+          output_conv2 <= conv2_bits;
+          case saved_mode is
+            when conv_merge_none =>
+              output_pixel <= (others => '0');
+
+            when conv_merge_sqrt_sum_of_squares =>
+              output_pixel(sqrt_out_bits - 1 downto 0) <= sqrt_res;
+
+            when conv_merge_or =>
+              output_pixel <= conv1_bits or conv2_bits;
+
+            when conv_merge_avg =>
+              output_pixel <= std_ulogic_vector(to_signed((reduce2_res_1 + reduce2_res_2) / 2, 32));
+          end case;
       end case;
     end if;
   end process;

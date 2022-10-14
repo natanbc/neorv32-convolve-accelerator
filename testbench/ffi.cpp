@@ -51,7 +51,7 @@ static inline void shift(uint8_t* data, uint8_t next) {
 }
 
 extern "C" {
-    void sim_apply(int32_t* out, int32_t* conv1, int32_t* conv2, const int8_t* kernel1, const int8_t* kernel2, const uint8_t* image, uint32_t width, uint32_t height) {
+    void sim_apply(int32_t* out, int32_t* conv1, int32_t* conv2, const int8_t* kernel1, const int8_t* kernel2, const uint8_t* image, uint32_t width, uint32_t height, uint8_t merge_mode) {
         cxxrtl_design::TOP top;
 
         top.step();
@@ -60,6 +60,7 @@ extern "C" {
         top.p_rst.set(true);
         top.step();
 
+        top.p_input__mode = value<2> { merge_mode };
         set_arr(top.p_input__matrix1, kernel1);
         set_arr(top.p_input__matrix2, kernel2);
 

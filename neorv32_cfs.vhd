@@ -51,11 +51,13 @@ architecture neorv32_cfs_rtl of neorv32_cfs is
 
   type pixel_regs_t is array (0 to 8) of std_ulogic_vector(7 downto 0);
   type matrix_regs_t is array (0 to 8) of std_ulogic_vector(7 downto 0);
+  type conv_merge_mode_t is range 0 to 3;
   
   signal input_start   : std_ulogic;
   signal input_pixels  : pixel_regs_t;
   signal input_matrix1 : matrix_regs_t;
   signal input_matrix2 : matrix_regs_t;
+  signal input_mode    : conv_merge_mode_t;
   signal output_conv1  : std_ulogic_vector(31 downto 0);
   signal output_conv2  : std_ulogic_vector(31 downto 0);
   signal output_pixel  : std_ulogic_vector(31 downto 0);
@@ -162,6 +164,16 @@ begin
         -- control register
         if (addr = cfs_reg0_addr_c) then
           input_start <= data_i(0);
+          case data_i(2 downto 1) is
+            when "00" =>
+              input_mode <= 0;
+            when "01" =>
+              input_mode <= 1;
+            when "10" =>
+              input_mode <= 2;
+            when "11" =>
+              input_mode <= 3;
+          end case;
         end if;
         -- pixel load registers
         if (addr = cfs_reg1_addr_c) then

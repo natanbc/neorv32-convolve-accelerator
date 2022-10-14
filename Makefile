@@ -60,17 +60,26 @@ testbench-serial: build/testbench_serial
 testbench: testbench-parallel testbench-serial
 .PHONY: testbench-parallel testbench-serial
 
-define __image_test
-build/$(1)-reference.png: testbench/image.py testbench/$(1).png
+define __image_test_variant
+build/$(1)-$(2)-reference.png: testbench/image.py testbench/$(1).png
 	mkdir -p $$(@D)
-	python3 testbench/image.py $(1) reference
-build/$(1)-cxxrtl-serial.png: testbench/image.py testbench/$(1).png build/testbench-ffi-serial.so
-	python3 testbench/image.py $(1) cxxrtl-serial
-build/$(1)-cxxrtl-parallel.png: testbench/image.py testbench/$(1).png build/testbench-ffi-parallel.so
-	python3 testbench/image.py $(1) cxxrtl-parallel
+	python3 testbench/image.py $(1) reference $(2)
+build/$(1)-$(2)-cxxrtl-serial.png: testbench/image.py testbench/$(1).png build/testbench-ffi-serial.so
+	python3 testbench/image.py $(1) cxxrtl-serial $(2)
+build/$(1)-$(2)-cxxrtl-parallel.png: testbench/image.py testbench/$(1).png build/testbench-ffi-parallel.so
+	python3 testbench/image.py $(1) cxxrtl-parallel $(2)
 
-testbench-$(1)-check: build/$(1)-reference.png build/$(1)-cxxrtl-serial.png build/$(1)-cxxrtl-parallel.png
-	python3 testbench/image.py $(1) check
+testbench-$(1)-$(2)-check: build/$(1)-$(2)-reference.png build/$(1)-$(2)-cxxrtl-serial.png build/$(1)-$(2)-cxxrtl-parallel.png
+	python3 testbench/image.py $(1) check $(2)
+
+testbench-$(1)-check: testbench-$(1)-$(2)-check
+.PHONY: testbench-$(1)-$(2)-check
+endef
+
+define __image_test
+$$(eval $$(call __image_test_variant,$(1),sqrt))
+$$(eval $$(call __image_test_variant,$(1),bor))
+$$(eval $$(call __image_test_variant,$(1),avg))
 
 testbench: testbench-$(1)-check
 .PHONY: testbench-$(1)-check
@@ -78,5 +87,8 @@ endef
 
 $(eval $(call __image_test,possum))
 $(eval $(call __image_test,mel))
+
+testbench:
+	@echo All tests OK
 
 .PHONY: all clean testbench
