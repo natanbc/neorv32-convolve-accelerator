@@ -26,9 +26,24 @@ end entity;
 
 architecture cpu_rtl of cpu is
 
+  signal pll_out : std_ulogic;
   signal con_gpio_o : std_ulogic_vector(63 downto 0);
 
+  component pll is
+    port (
+      inclk0 : in std_logic;
+      c0     : out std_logic
+    );
+  end component pll;
+
 begin
+
+  pll_inst : pll
+  port map (
+    inclk0 => clk_i,
+    c0     => pll_out
+  );
+
 
   -- The Core Of The Problem ----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -60,7 +75,7 @@ begin
   )
   port map (
     -- Global control --
-    clk_i       => clk_i,       -- global clock, rising edge
+    clk_i       => pll_out,     -- global clock, rising edge
     rstn_i      => rstn_i,      -- global reset, low-active, async
     -- GPIO (available if IO_GPIO_EN = true) --
     gpio_o      => con_gpio_o,  -- parallel output
