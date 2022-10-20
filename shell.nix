@@ -11,6 +11,7 @@ in
 pkgs.mkShell {
     nativeBuildInputs = [
         unstable.ghdl
+        gnumake
         python
         unstable.yosys
     ];
