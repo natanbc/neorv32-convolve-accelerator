@@ -9,7 +9,7 @@ let
     unstable = import (builtins.fetchTarball https://github.com/nixos/nixpkgs/tarball/master) {};
 in
 pkgs.mkShell {
-    nativeBuildInputs = [
+    nativeBuildInputs = with pkgs; [
         unstable.ghdl
         gnumake
         python

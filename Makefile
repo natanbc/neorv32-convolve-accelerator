@@ -1,3 +1,5 @@
+#!/usr/bin/env nix-shell
+#! nix-shell --pure -i make
 CONVOLVE_SOURCES=convolve.vhd convolve_parallel.vhd convolve_serial.vhd isqrt.vhd
 
 CXXRTL_CXX_FLAGS=-g -O3 -std=c++14 -I $(shell yosys-config --datdir)/include
