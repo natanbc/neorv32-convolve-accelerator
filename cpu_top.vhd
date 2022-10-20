@@ -8,8 +8,8 @@ use neorv32.neorv32_package.all;
 entity cpu is
   generic (
     -- adapt these for your setup --
-    CLOCK_FREQUENCY   : natural := 50000000;  -- clock frequency of clk_i in Hz
-    MEM_INT_IMEM_SIZE : natural := 32*1024;   -- size of processor-internal instruction memory in bytes
+    CLOCK_FREQUENCY   : natural := 100000000;  -- clock frequency of clk_i in Hz
+    MEM_INT_IMEM_SIZE : natural := 32*1024;    -- size of processor-internal instruction memory in bytes
     MEM_INT_DMEM_SIZE : natural := 32*1024     -- size of processor-internal data memory in bytes
   );
   port (
