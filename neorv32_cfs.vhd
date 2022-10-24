@@ -71,6 +71,7 @@ architecture neorv32_cfs_rtl of neorv32_cfs is
       input_pixels  : in pixel_regs_t;
       input_matrix1 : in matrix_regs_t;
       input_matrix2 : in matrix_regs_t;
+      input_mode    : in conv_merge_mode_t;
       output_conv1  : out std_ulogic_vector(31 downto 0);
       output_conv2  : out std_ulogic_vector(31 downto 0);
       output_pixel  : out std_ulogic_vector(31 downto 0);
@@ -86,6 +87,7 @@ architecture neorv32_cfs_rtl of neorv32_cfs is
       input_pixels  : in pixel_regs_t;
       input_matrix1 : in matrix_regs_t;
       input_matrix2 : in matrix_regs_t;
+      input_mode    : in conv_merge_mode_t;
       output_conv1  : out std_ulogic_vector(31 downto 0);
       output_conv2  : out std_ulogic_vector(31 downto 0);
       output_pixel  : out std_ulogic_vector(31 downto 0);
@@ -120,6 +122,7 @@ begin
       input_pixels  => input_pixels,
       input_matrix1 => input_matrix1,
       input_matrix2 => input_matrix2,
+      input_mode    => input_mode,
       output_conv1  => output_conv1,
       output_conv2  => output_conv2,
       output_pixel  => output_pixel,
@@ -136,6 +139,7 @@ begin
       input_pixels  => input_pixels,
       input_matrix1 => input_matrix1,
       input_matrix2 => input_matrix2,
+      input_mode    => input_mode,
       output_conv1  => output_conv1,
       output_conv2  => output_conv2,
       output_pixel  => output_pixel,
