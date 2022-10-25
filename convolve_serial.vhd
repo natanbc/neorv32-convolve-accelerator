@@ -29,7 +29,7 @@ architecture convolve_serial_rtl of convolve_serial is
     idle,
     multiply_1, multiply_wait_1, reduce1_1, reduce2_1, square_1,
     multiply_2, multiply_wait_2, reduce1_2, reduce2_2, square_2,
-    sqrt, sqrt_wait0, sqrt_wait, done
+    sqrt, sqrt_wait0, sqrt_wait, calc_abs_1, calc_abs_2, done
   );
   signal step : state;
 
@@ -58,6 +58,9 @@ architecture convolve_serial_rtl of convolve_serial is
 
   signal sqrt_res : std_ulogic_vector(sqrt_out_bits - 1 downto 0);
   signal sqrt_busy : std_ulogic;
+
+  signal abs_res_1 : integer;
+  signal abs_res_2 : integer;
 
   component isqrt is
     generic (
@@ -166,6 +169,9 @@ begin
         when reduce2_2 =>
           reduce2_res_2 <= reduce1_res_2(0) + reduce1_res_2(1);
           case saved_mode is
+            when conv_merge_sum_abs =>
+              step <= calc_abs_1;
+
             when conv_merge_sqrt_sum_of_squares =>
               step <= square_2;
 
@@ -190,6 +196,14 @@ begin
             step <= done;
           end if;
 
+        when calc_abs_1 =>
+          abs_res_1 <= conv_abs(reduce2_res_1);
+          step <= calc_abs_2;
+
+        when calc_abs_2 =>
+          abs_res_2 <= conv_abs(reduce2_res_2);
+          step <= done;
+
         when done =>
           if (input_start = '1') then
             step         <= multiply_1;
@@ -204,8 +218,8 @@ begin
           output_conv1 <= conv1_bits;
           output_conv2 <= conv2_bits;
           case saved_mode is
-            when conv_merge_none =>
-              output_pixel <= (others => '0');
+            when conv_merge_sum_abs =>
+              output_pixel <= std_ulogic_vector(to_signed(abs_res_1 + abs_res_2, 32));
             
             when conv_merge_sqrt_sum_of_squares =>
               output_pixel(sqrt_out_bits - 1 downto 0) <= sqrt_res;

@@ -11,13 +11,13 @@ const uint8_t pixels2[9] = {183, 112, 37, 166, 159, 64, 250, 96, 186};
 const uint8_t pixels3[9] = {35, 224, 27, 192, 189, 58, 167, 235, 175};
 
 enum merge_mode {
-    conv_merge_none = 0,
+    conv_merge_sum_abs = 0,
     conv_merge_sqrt_sum_of_squares = 1,
     conv_merge_or = 2,
     conv_merge_avg = 3,
 };
 const char* MODE_NAMES[4] = {
-    "conv_merge_none",
+    "conv_merge_sum_abs",
     "conv_merge_sqrt_sum_of_squares",
     "conv_merge_or",
     "conv_merge_avg",
@@ -75,8 +75,8 @@ static int test(cxxrtl_design::TOP& top, const uint8_t pixels[9], merge_mode mod
     int32_t expected_conv1 = conv(pixels, matrix1);
     int32_t expected_conv2 = conv(pixels, matrix2);
     int32_t expected_pixel;
-    if(mode == conv_merge_none) {
-        expected_pixel = 0;
+    if(mode == conv_merge_sum_abs) {
+        expected_pixel = std::abs(expected_conv1) + std::abs(expected_conv2);
     } else if(mode == conv_merge_sqrt_sum_of_squares) {
         expected_pixel = (int16_t)std::sqrt(expected_conv1 * expected_conv1 + expected_conv2 * expected_conv2);
     } else if(mode == conv_merge_or) {

@@ -79,6 +79,7 @@ testbench-$(1)-check: testbench-$(1)-$(2)-check
 endef
 
 define __image_test
+$$(eval $$(call __image_test_variant,$(1),sum_abs))
 $$(eval $$(call __image_test_variant,$(1),sqrt))
 $$(eval $$(call __image_test_variant,$(1),bor))
 $$(eval $$(call __image_test_variant,$(1),avg))

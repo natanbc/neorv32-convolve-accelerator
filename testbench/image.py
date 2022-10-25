@@ -8,7 +8,7 @@ import struct
 parser = argparse.ArgumentParser()
 parser.add_argument("image", help="Which image to work on")
 parser.add_argument("which", help="Which image to generate (reference, cxxrtl-serial, cxxrtl-parallel) or 'check' to verify if they match")
-parser.add_argument("mode", help="Which mode should the results of the two convolutions be merged with (sqrt, bor, avg)")
+parser.add_argument("mode", help="Which mode should the results of the two convolutions be merged with (sum_abs, sqrt, bor, avg)")
 args = parser.parse_args()
 
 which = args.which
@@ -16,9 +16,10 @@ image_name = args.image
 mode = args.mode
 
 mode_native_values = {
-    "sqrt": 1,
-    "bor":  2,
-    "avg":  3,
+    "sum_abs": 0,
+    "sqrt":    1,
+    "bor":     2,
+    "avg":     3,
 }
 
 if which not in ["reference", "cxxrtl-serial", "cxxrtl-parallel", "check"]:
@@ -41,7 +42,9 @@ def reference(img):
     out1 = -scipy.signal.convolve2d(img, vertical_kernel, mode="same").astype(np.int32)
     out2 = -scipy.signal.convolve2d(img, horizontal_kernel, mode="same").astype(np.int32)
 
-    if mode == "sqrt":
+    if mode == "sum_abs":
+        res = (np.abs(out1) + np.abs(out2)) / 4
+    elif mode == "sqrt":
         res = np.sqrt(np.square(out1) + np.square(out2)) / 4
     elif mode == "bor":
         res = np.bitwise_or(out1, out2) / 4

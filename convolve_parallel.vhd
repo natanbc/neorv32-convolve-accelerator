@@ -25,7 +25,7 @@ end convolve_parallel;
 architecture convolve_parallel_rtl of convolve_parallel is
   constant sqrt_out_bits : natural := sqrt_in_bits / 2;
 
-  type state is (idle, multiply, reduce1, reduce2, square, sqrt, sqrt_wait0, sqrt_wait, done);
+  type state is (idle, multiply, reduce1, reduce2, square, sqrt, sqrt_wait0, sqrt_wait, calc_abs, done);
   signal step : state;
 
   signal saved_mode : conv_merge_mode_t;
@@ -49,6 +49,9 @@ architecture convolve_parallel_rtl of convolve_parallel is
 
   signal sqrt_res : std_ulogic_vector(sqrt_out_bits - 1 downto 0);
   signal sqrt_busy : std_ulogic;
+
+  signal abs_res_1 : integer;
+  signal abs_res_2 : integer;
 
   component isqrt is
     generic (
@@ -128,6 +131,9 @@ begin
           reduce2_res_1 <= reduce1_res_1(0) + reduce1_res_1(1);
           reduce2_res_2 <= reduce1_res_2(0) + reduce1_res_2(1);
           case saved_mode is
+            when conv_merge_sum_abs =>
+              step <= calc_abs;
+
             when conv_merge_sqrt_sum_of_squares =>
               step <= square;
 
@@ -153,6 +159,11 @@ begin
             step <= done;
           end if;
 
+        when calc_abs =>
+          abs_res_1 <= conv_abs(reduce2_res_1);
+          abs_res_2 <= conv_abs(reduce2_res_2);
+          step <= done;
+
         when done =>
           if (input_start = '1') then
             step         <= multiply;
@@ -167,8 +178,8 @@ begin
           output_conv1 <= conv1_bits;
           output_conv2 <= conv2_bits;
           case saved_mode is
-            when conv_merge_none =>
-              output_pixel <= (others => '0');
+            when conv_merge_sum_abs =>
+              output_pixel <= std_ulogic_vector(to_signed(abs_res_1 + abs_res_2, 32));
 
             when conv_merge_sqrt_sum_of_squares =>
               output_pixel(sqrt_out_bits - 1 downto 0) <= sqrt_res;
