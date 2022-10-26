@@ -22,16 +22,13 @@ entity cpu is
     uart0_txd_o : out std_ulogic; -- UART0 send data
     uart0_rxd_i : in  std_ulogic; -- UART0 receive data
 
-    dram_addr   : out std_logic_vector(12 downto 0);
-    dram_bank   : out std_logic_vector(1 downto 0);
-    dram_cas_n  : out std_logic;
-    dram_ras_n  : out std_logic;
-    dram_cke    : out std_logic;
-    dram_clk    : out std_logic;
-    dram_cs_n   : out std_logic;
-    dram_dq     : inout std_logic_vector(31 downto 0);
-    dram_dqm    : out std_logic_vector(3 downto 0);
-    dram_we_n   : out std_logic
+    sram_addr : out std_ulogic_vector(19 downto 0);
+    sram_dq   : inout std_ulogic_vector(15 downto 0);
+    sram_oe_n : out std_ulogic;
+    sram_we_n : out std_ulogic;
+    sram_ce_n : out std_ulogic;
+    sram_lb_n : out std_ulogic;
+    sram_hb_n : out std_ulogic
   );
 end entity;
 
@@ -50,17 +47,18 @@ architecture cpu_rtl of cpu is
   signal wb_stb       : std_ulogic;
   signal wb_cyc       : std_ulogic;
   signal wb_ack       : std_ulogic;
+  signal wb_err       : std_ulogic;
 
-  signal wb_dram_enable : std_logic;
-  signal wb_dram_addr   : std_logic_vector(22 downto 0);
-  -- TO dram
-  signal wb_dram_out    : std_logic_vector(31 downto 0);
-  -- FROM dram
-  signal wb_dram_in     : std_logic_vector(31 downto 0);
-  signal wb_dram_we     : std_logic;
-  signal wb_dram_ack    : std_logic;
-  signal wb_dram_stb    : std_logic;
-  signal wb_dram_cyc    : std_logic;
+  signal wb_sram_enable : std_ulogic;
+  -- TO sram
+  signal wb_sram_addr   : std_ulogic_vector(18 downto 0);
+  signal wb_sram_out    : std_ulogic_vector(31 downto 0);
+  signal wb_sram_we     : std_ulogic;
+  signal wb_sram_stb    : std_ulogic;
+  signal wb_sram_cyc    : std_ulogic;
+  -- FROM sram
+  signal wb_sram_in     : std_ulogic_vector(31 downto 0);
+  signal wb_sram_ack    : std_ulogic;
 
   component pll is
     port (
@@ -71,32 +69,32 @@ architecture cpu_rtl of cpu is
     );
   end component pll;
 
-  component sdram_controller is
-  port (
-    clk        : in std_logic;
-    clk_dram   : in std_logic;
-    rst        : in std_logic;
-    dll_locked : in std_logic;
-    -- DRAM signals
-    dram_addr  : out std_logic_vector(12 downto 0);
-    dram_bank  : out std_logic_vector(1 downto 0);
-    dram_cas_n : out std_logic;
-    dram_ras_n : out std_logic;
-    dram_cke   : out std_logic;
-    dram_clk   : out std_logic;
-    dram_cs_n  : out std_logic;
-    dram_dq    : inout std_logic_vector(31 downto 0);
-    dram_dqm   : out std_logic_vector(3 downto 0);
-    dram_we_n  : out std_logic;
-    --wishbone
-    addr_i     : in std_logic_vector(22 downto 0);
-    dat_i      : in std_logic_vector(31 downto 0);
-    dat_o      : out std_logic_vector(31 downto 0);
-    we_i       : in std_logic;
-    ack_o      : out std_logic;
-    stb_i      : in std_logic;
-    cyc_i      : in std_logic);
-  end component sdram_controller;
+  component sram_controller is
+    port (
+      clk    : in std_ulogic;
+      rst    : in std_ulogic;
+      -- Wishbone in
+      addr_i : in std_ulogic_vector(18 downto 0);
+      sel_i  : in std_ulogic_vector(3 downto 0);
+      data_i : in std_ulogic_vector(31 downto 0);
+      stb_i  : in std_ulogic;
+      cyc_i  : in std_ulogic;
+      we_i   : in std_ulogic;
+
+      -- Wishbone out
+      data_o : out std_ulogic_vector(31 downto 0);
+      ack_o  : out std_ulogic;
+
+      -- SRAM IO
+      sram_addr : out std_ulogic_vector(19 downto 0);
+      sram_dq   : inout std_ulogic_vector(15 downto 0);
+      sram_oe_n : out std_ulogic;
+      sram_we_n : out std_ulogic;
+      sram_ce_n : out std_ulogic;
+      sram_lb_n : out std_ulogic;
+      sram_hb_n : out std_ulogic
+    );
+  end component sram_controller;
 
 begin
 
@@ -108,33 +106,29 @@ begin
     locked => pll_locked
   );
 
-  sdram_inst : sdram_controller
-  port map (
-    clk        => pll_out,
-    clk_dram   => pll_out_dram,
-    rst        => rstn_i,
-    dll_locked => pll_locked,
+  sram_inst : sram_controller
+  port map(
+    clk => pll_out,
+    rst => rstn_i,
 
-    dram_addr  => dram_addr,
-    dram_bank  => dram_bank,
-    dram_cas_n => dram_cas_n,
-    dram_ras_n => dram_ras_n,
-    dram_cke   => dram_cke,
-    dram_clk   => dram_clk,
-    dram_cs_n  => dram_cs_n,
-    dram_dq    => dram_dq,
-    dram_dqm   => dram_dqm,
-    dram_we_n  => dram_we_n,
+    addr_i => wb_sram_addr,
+    sel_i  => wb_sel,
+    data_i => wb_sram_out,
+    stb_i  => wb_sram_stb,
+    cyc_i  => wb_sram_cyc,
+    we_i   => wb_sram_we,
 
-    addr_i     => wb_dram_addr,
-    dat_i      => wb_dram_out,  -- wb_dram_out is TO dram
-    dat_o      => wb_dram_in,   -- wb_dram_in is FROM dram
-    we_i       => wb_dram_we,
-    ack_o      => wb_dram_ack,
-    stb_i      => wb_dram_stb,
-    cyc_i      => wb_dram_cyc
+    data_o => wb_sram_in,
+    ack_o  => wb_sram_ack,
+
+    sram_addr => sram_addr,
+    sram_dq   => sram_dq,
+    sram_oe_n => sram_oe_n,
+    sram_we_n => sram_we_n,
+    sram_ce_n => sram_ce_n,
+    sram_lb_n => sram_lb_n,
+    sram_hb_n => sram_hb_n
   );
-
 
   -- The Core Of The Problem ----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -163,8 +157,8 @@ begin
     MEM_EXT_EN                   => true,
     MEM_EXT_TIMEOUT              => 1000,
     MEM_EXT_PIPE_MODE            => true,
-    MEM_EXT_ASYNC_RX             => true,
-    MEM_EXT_ASYNC_TX             => true,
+    MEM_EXT_ASYNC_RX             => false,
+    MEM_EXT_ASYNC_TX             => false,
     -- Processor peripherals --
     IO_CFS_EN                    => true, -- convolution operation
     IO_GPIO_EN                   => true,
@@ -189,7 +183,7 @@ begin
     wb_stb_o    => wb_stb,
     wb_cyc_o    => wb_cyc,
     wb_ack_i    => wb_ack,
-    wb_err_i    => '0'
+    wb_err_i    => wb_err
   );
 
   -- GPIO output --
@@ -197,15 +191,17 @@ begin
 
   -- Wishbone SDRAM interconnect --
   -- TO dram
-  wb_dram_enable <= '1' when (wb_adr(31 downto 23) = x"900000") else '0';
-  wb_dram_addr   <= std_logic_vector(wb_adr(22 downto 0));
-  wb_dram_out    <= std_logic_vector(wb_dat_write);
-  wb_dram_we     <= wb_we;
-  wb_dram_stb    <= wb_dram_enable and wb_stb;
-  wb_dram_cyc    <= wb_cyc;
+  wb_sram_enable <= '1' when (wb_adr(31 downto 28) = x"9") and (wb_adr(27 downto 19) = "000000000") else '0';
+  wb_err         <= wb_stb and not wb_sram_enable;
+
+  wb_sram_addr   <= wb_adr(18 downto 0);
+  wb_sram_out    <= wb_dat_write;
+  wb_sram_we     <= wb_we;
+  wb_sram_stb    <= wb_sram_enable and wb_stb;
+  wb_sram_cyc    <= wb_cyc;
 
   -- FROM dram
-  wb_dat_read    <= std_ulogic_vector(wb_dram_in) when (wb_dram_enable = '1') else (others => '0');
-  wb_ack         <= wb_dram_ack;
+  wb_dat_read    <= wb_sram_in when (wb_sram_enable = '1') else (others => '0');
+  wb_ack         <= wb_sram_ack;
 
 end architecture;
