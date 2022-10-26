@@ -51,7 +51,7 @@ architecture cpu_rtl of cpu is
 
   signal wb_sram_enable : std_ulogic;
   -- TO sram
-  signal wb_sram_addr   : std_ulogic_vector(18 downto 0);
+  signal wb_sram_addr   : std_ulogic_vector(20 downto 0);
   signal wb_sram_out    : std_ulogic_vector(31 downto 0);
   signal wb_sram_we     : std_ulogic;
   signal wb_sram_stb    : std_ulogic;
@@ -74,7 +74,7 @@ architecture cpu_rtl of cpu is
       clk    : in std_ulogic;
       rst    : in std_ulogic;
       -- Wishbone in
-      addr_i : in std_ulogic_vector(18 downto 0);
+      addr_i : in std_ulogic_vector(20 downto 0);
       sel_i  : in std_ulogic_vector(3 downto 0);
       data_i : in std_ulogic_vector(31 downto 0);
       stb_i  : in std_ulogic;
@@ -191,10 +191,10 @@ begin
 
   -- Wishbone SDRAM interconnect --
   -- TO dram
-  wb_sram_enable <= '1' when (wb_adr(31 downto 28) = x"9") and (wb_adr(27 downto 19) = "000000000") else '0';
+  wb_sram_enable <= '1' when (wb_adr(31 downto 28) = x"9") and (wb_adr(27 downto 21) = "0000000") else '0';
   wb_err         <= wb_stb and not wb_sram_enable;
 
-  wb_sram_addr   <= wb_adr(18 downto 0);
+  wb_sram_addr   <= wb_adr(20 downto 0);
   wb_sram_out    <= wb_dat_write;
   wb_sram_we     <= wb_we;
   wb_sram_stb    <= wb_sram_enable and wb_stb;

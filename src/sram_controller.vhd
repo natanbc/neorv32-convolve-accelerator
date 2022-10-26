@@ -7,7 +7,7 @@ entity sram_controller is
     clk    : in std_ulogic;
     rst    : in std_ulogic;
     -- Wishbone in
-    addr_i : in std_ulogic_vector(18 downto 0);
+    addr_i : in std_ulogic_vector(20 downto 0);
     sel_i  : in std_ulogic_vector(3 downto 0);
     data_i : in std_ulogic_vector(31 downto 0);
     stb_i  : in std_ulogic;
@@ -59,7 +59,7 @@ begin
          when "000" =>
            data_o(15 downto 0) <= sram_in;
 
-           sram_addr <= addr_i & '0';
+           sram_addr <= addr_i(20 downto 2) & '0';
            sram_lb_n <= '1';
            sram_hb_n <= '1';
            sram_ce_n <= '1';
@@ -109,6 +109,7 @@ begin
 
            ack_o <= next_ack and cyc_i;
        end case;
+    end if;
   end process;
 end sram_controller_rtl;
 
