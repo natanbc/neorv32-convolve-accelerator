@@ -120,11 +120,12 @@ set_global_assignment -name VHDL_FILE neorv32/rtl/core/neorv32_xip.vhd -library 
 set_global_assignment -name VHDL_FILE neorv32/rtl/core/neorv32_xirq.vhd -library neorv32
 set_global_assignment -name VHDL_FILE neorv32/rtl/core/mem/neorv32_dmem.default.vhd -library neorv32
 set_global_assignment -name VHDL_FILE neorv32/rtl/core/mem/neorv32_imem.default.vhd -library neorv32
-set_global_assignment -name VHDL_FILE cpu_top.vhd
-set_global_assignment -name VHDL_FILE neorv32_cfs.vhd -library neorv32
-set_global_assignment -name VHDL_FILE convolve.vhd
-set_global_assignment -name VHDL_FILE convolve_parallel.vhd
-set_global_assignment -name VHDL_FILE convolve_serial.vhd
-set_global_assignment -name VHDL_FILE isqrt.vhd
-set_global_assignment -name QIP_FILE pll.qip
+set_global_assignment -name VHDL_FILE src/cpu_top.vhd
+set_global_assignment -name VHDL_FILE src/neorv32_cfs.vhd -library neorv32
+set_global_assignment -name VHDL_FILE src/convolve.vhd
+set_global_assignment -name VHDL_FILE src/convolve_parallel.vhd
+set_global_assignment -name VHDL_FILE src/convolve_serial.vhd
+set_global_assignment -name VHDL_FILE src/isqrt.vhd
+set_global_assignment -name QIP_FILE src/pll.qip
+
 set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top
