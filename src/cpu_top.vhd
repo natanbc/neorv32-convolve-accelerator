@@ -147,6 +147,13 @@ begin
     FAST_MUL_EN                  => true,
     FAST_SHIFT_EN                => true,
 
+    ICACHE_EN                    => true,
+    ICACHE_NUM_BLOCKS            => 8,
+    ICACHE_BLOCK_SIZE            => 32,
+    ICACHE_ASSOCIATIVITY         => 2,
+
+    CPU_IPB_ENTRIES              => 4,
+
     -- Internal Instruction memory --
     MEM_INT_IMEM_EN              => true,
     MEM_INT_IMEM_SIZE            => MEM_INT_IMEM_SIZE,
@@ -155,8 +162,8 @@ begin
     MEM_INT_DMEM_SIZE            => MEM_INT_DMEM_SIZE,
     -- External Memory --
     MEM_EXT_EN                   => true,
-    MEM_EXT_TIMEOUT              => 1000,
-    MEM_EXT_PIPE_MODE            => true,
+    MEM_EXT_TIMEOUT              => 32,
+    MEM_EXT_PIPE_MODE            => false,
     MEM_EXT_ASYNC_RX             => false,
     MEM_EXT_ASYNC_TX             => false,
     -- Processor peripherals --

@@ -7,7 +7,7 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_cfs is
   generic (
-    PARALLEL     : boolean := false;
+    PARALLEL     : boolean := true;
     CFS_CONFIG   : std_ulogic_vector(31 downto 0);
     CFS_IN_SIZE  : positive;
     CFS_OUT_SIZE : positive
