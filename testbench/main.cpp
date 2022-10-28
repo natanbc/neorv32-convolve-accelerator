@@ -78,7 +78,7 @@ static int test(cxxrtl_design::TOP& top, const uint8_t pixels[9], merge_mode mod
     if(mode == conv_merge_sum_abs) {
         expected_pixel = std::abs(expected_conv1) + std::abs(expected_conv2);
     } else if(mode == conv_merge_sqrt_sum_of_squares) {
-        expected_pixel = (int16_t)std::sqrt(expected_conv1 * expected_conv1 + expected_conv2 * expected_conv2);
+        expected_pixel = (int32_t)std::sqrt(expected_conv1 * expected_conv1 + expected_conv2 * expected_conv2);
     } else if(mode == conv_merge_or) {
         expected_pixel = (int32_t)((uint32_t)expected_conv1 | (uint32_t)expected_conv2);
     } else if(mode == conv_merge_avg) {

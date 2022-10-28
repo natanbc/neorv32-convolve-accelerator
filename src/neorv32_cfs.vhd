@@ -166,17 +166,24 @@ begin
       -- write access --
       if (wren = '1') then
         -- control register
+        -- BITS:
+        -- 0        start operation
+        -- 2:1      operation mode (ignored if `operation mode set` is 0)
+        -- 3        operation mode set, if present changes mode
         if (addr = cfs_reg0_addr_c) then
           input_start <= data_i(0);
-          case data_i(2 downto 1) is
-            when "00" =>
+          case data_i(3 downto 1) is
+            when "100" =>
               input_mode <= 0;
-            when "01" =>
+            when "101" =>
               input_mode <= 1;
-            when "10" =>
+            when "110" =>
               input_mode <= 2;
-            when "11" =>
+            when "111" =>
               input_mode <= 3;
+
+            when others =>
+              -- nothing
           end case;
         end if;
         -- pixel load registers
