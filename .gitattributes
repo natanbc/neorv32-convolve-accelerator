@@ -1,0 +1,3 @@
+# Ignore blob of image data from language stats
+software/projects/convolve/image.c linguist-vendored
+
